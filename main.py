@@ -35,30 +35,50 @@ def get_arrivals(stop_configs):
         return '\n'.join(results)
     except Exception as e:
         return 'Error: ' + str(e)
-ECF_API = 'https://rating.englishchess.org.uk/v2/new/api.php?v2/players/fuzzy_name/'
+ECF_API_SEARCH = 'https://rating.englishchess.org.uk/v2/new/api.php?v2/players/fuzzy_name/'
+ECF_API_RATING = 'https://rating.englishchess.org.uk/v2/new/api.php?v2/ratings/S/'
+
 def get_chess_rating(player_name):
     search_name = player_name.replace(' ', '+')
     try:
-        r = requests.get(ECF_API + search_name, timeout=10)
+        r = requests.get(ECF_API_SEARCH + search_name, timeout=10)
         data = r.json()
         players = data.get('players', [])
         if not players:
-            return 'No players found for ' + player_name + '.'
+            return 'No players found for ' + player_name + '. Try LASTNAME FIRSTNAME e.g. Kennedy Aden'
         elif len(players) == 1:
             p = players[0]
             name = p.get('full_name', 'Unknown')
-            standard = str(p.get('revised_rating', 'N/A'))
-            rapid = str(p.get('revised_rating_rapid', 'N/A'))
+            ecf_code = p.get('ECF_code', '')
             club = p.get('club_name', 'No club listed')
+            # Get actual rating using ECF code
+            standard = 'N/A'
+            rapid = 'N/A'
+            if ecf_code:
+                try:
+                    r2 = requests.get(ECF_API_RATING + ecf_code, timeout=10)
+                    rating_data = r2.json()
+                    ratings = rating_data.get('ratings', [])
+                    if ratings:
+                        standard = str(ratings[0].get('revised_rating', 'N/A'))
+                except:
+                    pass
+                try:
+                    r3 = requests.get(ECF_API_RATING.replace('/S/', '/R/') + ecf_code, timeout=10)
+                    rapid_data = r3.json()
+                    rapid_ratings = rapid_data.get('ratings', [])
+                    if rapid_ratings:
+                        rapid = str(rapid_ratings[0].get('revised_rating', 'N/A'))
+                except:
+                    pass
             return 'Chess: ' + name + '\nStandard: ' + standard + '\nRapid: ' + rapid + '\nClub: ' + club
         else:
-            lines = ['Multiple players found for ' + player_name + ':']
+            lines = ['Multiple players found. Try LASTNAME FIRSTNAME:']
             for p in players[:5]:
                 name = p.get('full_name', 'Unknown')
-                rating = str(p.get('revised_rating', 'N/A'))
                 club = p.get('club_name', '')
-                lines.append('- ' + name + ' (' + rating + ') - ' + club)
-            lines.append('Text the full name to narrow it down.')
+                lines.append('- ' + name + ' - ' + club)
+            lines.append('e.g. Text: Kennedy Aden')
             return '\n'.join(lines)
     except Exception as e:
         return 'Sorry, could not reach the ECF database. Please try again shortly.'
