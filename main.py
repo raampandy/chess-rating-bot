@@ -56,7 +56,7 @@ def get_chess_rating(player_name):
         data = r.json()
         players = data.get('players', [])
         if not players:
-            return 'No players found for ' + player_name + '. Try LASTNAME FIRSTNAME e.g. Kennedy Aden'
+            return 'No players found for ' + player_name + '. Try LASTNAME FIRSTNAME e.g. Kumar Sachin'
         elif len(players) == 1:
             p = players[0]
             name = p.get('full_name', 'Unknown')
