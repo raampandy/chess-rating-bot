@@ -213,29 +213,6 @@ def sms_reply():
 
     resp.message(message_text)
     return str(resp)
-import re
-
-@app.route('/')
-def index():
-    api_key = os.environ.get('GOOGLE_MAPS_API_KEY', '')
-    with open(os.path.join(os.path.dirname(__file__), 'static/index.html')) as f:
-        html = f.read()
-    html = html.replace('%%GOOGLE_MAPS_API_KEY%%', api_key)
-    return html
-
-@app.route('/api/find-stops', methods=['POST'])
-def api_find_stops():
-    data = request.get_json()
-    postcode = data.get('postcode', '').strip()
-    if not postcode:
-        return {'error': 'Please enter a postcode'}, 400
-    lat, lon = postcode_to_latlong(postcode)
-    if not lat:
-        return {'error': 'Could not find that postcode. Please try again.'}, 400
-    stops = find_nearby_stops(lat, lon)
-    if not stops:
-        return {'error': 'No bus stops found near ' + postcode + '. Try a nearby postcode.'}, 400
-    return {'stops': stops, 'center': {'lat': lat, 'lon': lon}}
 
 @app.route('/api/register', methods=['POST'])
 def api_register():
