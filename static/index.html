@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TextMyRide - Live Bus Times by SMS</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; color: #333; }
+        .header { background: linear-gradient(135deg, #1a73e8, #0d47a1); color: white; padding: 20px; text-align: center; }
+        .header h1 { font-size: 2em; margin-bottom: 5px; }
+        .header p { opacity: 0.9; font-size: 1.1em; }
+        .container { max-width: 600px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 16px; padding: 30px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .card h2 { font-size: 1.3em; margin-bottom: 20px; color: #1a73e8; }
+        .step { display: flex; align-items: center; margin-bottom: 15px; }
+        .step-num { background: #1a73e8; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 12px; flex-shrink: 0; }
+        input { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1em; margin-bottom: 12px; transition: border-color 0.2s; }
+        input:focus { outline: none; border-color: #1a73e8; }
+        button { width: 100%; padding: 14px; background: #1a73e8; color: white; border: none; border-radius: 10px; font-size: 1em; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #1557b0; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .stop-card { border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+        .stop-card:hover { border-color: #1a73e8; background: #f8f9ff; }
+        .stop-card.selected { border-color: #1a73e8; background: #e8f0fe; }
+        .stop-name { font-weight: 600; font-size: 1em; }
+        .stop-buses { color: #666; font-size: 0.9em; margin-top: 4px; }
+        .map-container { width: 100%; height: 300px; border-radius: 10px; overflow: hidden; margin-bottom: 15px; border: 2px solid #e0e0e0; }
+        .keyword-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .keyword-row input { margin-bottom: 0; }
+        .saved-stop { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #e8f0fe; border-radius: 10px; margin-bottom: 8px; }
+        .saved-stop-name { font-weight: 600; color: #1a73e8; }
+        .saved-stop-detail { color: #666; font-size: 0.9em; }
+        .remove-btn { background: none; border: none; color: #e53935; cursor: pointer; font-size: 1.2em; width: auto; padding: 0 5px; }
+        .success { background: #e8f5e9; border: 2px solid #4caf50; border-radius: 10px; padding: 20px; text-align: center; }
+        .success h3 { color: #2e7d32; font-size: 1.3em; margin-bottom: 10px; }
+        .success p { color: #388e3c; }
+        .phone-preview { background: #f5f5f5; border-radius: 10px; padding: 15px; font-family: monospace; font-size: 0.9em; margin-top: 15px; }
+        .phone-preview div { margin-bottom: 5px; }
+        .tag { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 3px 10px; border-radius: 20px; font-size: 0.85em; margin: 3px; }
+        .error { color: #e53935; font-size: 0.9em; margin-bottom: 10px; }
+        .loading { text-align: center; color: #666; padding: 20px; }
+        #map { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚌 TextMyRide</h1>
+        <p>Live bus times by SMS — no smartphone needed</p>
+    </div>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function App() {
+            const [step, setStep] = useState(1);
+            const [phone, setPhone] = useState('');
+            const [postcode, setPostcode] = useState('');
+            const [nearbyStops, setNearbyStops] = useState([]);
+            const [selectedStop, setSelectedStop] = useState(null);
+            const [keyword, setKeyword] = useState('');
+            const [savedStops, setSavedStops] = useState([]);
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [mapCenter, setMapCenter] = useState(null);
+            const mapRef = useRef(null);
+            const googleMapRef = useRef(null);
+            const markersRef = useRef([]);
+
+            useEffect(() => {
+                if (step === 2 && mapCenter && window.google) {
+                    initMap();
+                }
+            }, [step, mapCenter, nearbyStops]);
+
+            function initMap() {
+                if (!mapRef.current) return;
+                googleMapRef.current = new window.google.maps.Map(mapRef.current, {
+                    center: { lat: mapCenter.lat, lng: mapCenter.lon },
+                    zoom: 15,
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                });
+                markersRef.current.forEach(m => m.setMap(null));
+                markersRef.current = [];
+                nearbyStops.forEach((stop, i) => {
+                    if (!stop.lat || !stop.lon) return;
+                    const marker = new window.google.maps.Marker({
+                        position: { lat: stop.lat, lng: stop.lon },
+                        map: googleMapRef.current,
+                        title: stop.name,
+                        label: { text: String(i + 1), color: 'white' },
+                        icon: {
+                            path: window.google.maps.SymbolPath.CIRCLE,
+                            scale: 18,
+                            fillColor: selectedStop === i ? '#0d47a1' : '#1a73e8',
+                            fillOpacity: 1,
+                            strokeColor: 'white',
+                            strokeWeight: 2,
+                        }
+                    });
+                    marker.addListener('click', () => setSelectedStop(i));
+                    markersRef.current.push(marker);
+                });
+            }
+
+            async function findStops() {
+                setError('');
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/find-stops', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ postcode })
+                    });
+                    const data = await res.json();
+                    if (data.error) {
+                        setError(data.error);
+                    } else {
+                        setNearbyStops(data.stops);
+                        setMapCenter(data.center);
+                        setStep(2);
+                    }
+                } catch (e) {
+                    setError('Could not find stops. Please try again.');
+                }
+                setLoading(false);
+            }
+
+            function addStop() {
+                if (selectedStop === null) { setError('Please select a stop'); return; }
+                if (!keyword.trim()) { setError('Please enter a name like HOME or SCHOOL'); return; }
+                const kw = keyword.trim().toUpperCase();
+                if (savedStops.find(s => s.keyword === kw)) { setError('You already have a stop called ' + kw); return; }
+                setSavedStops([...savedStops, { ...nearbyStops[selectedStop], keyword: kw }]);
+                setSelectedStop(null);
+                setKeyword('');
+                setError('');
+            }
+
+            function removeStop(kw) {
+                setSavedStops(savedStops.filter(s => s.keyword !== kw));
+            }
+
+            async function saveAndFinish() {
+                if (!phone.trim()) { setError('Please enter a phone number'); return; }
+                if (savedStops.length === 0) { setError('Please add at least one stop'); return; }
+                setLoading(true);
+                setError('');
+                try {
+                    const res = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone, stops: savedStops })
+                    });
+                    const data = await res.json();
+                    if (data.error) {
+                        setError(data.error);
+                    } else {
+                        setStep(3);
+                    }
+                } catch (e) {
+                    setError('Something went wrong. Please try again.');
+                }
+                setLoading(false);
+            }
+
+            return (
+                <div className="container">
+                    {step === 1 && (
+                        <div className="card">
+                            <h2>📱 Set up your child's stops</h2>
+                            <div className="step">
+                                <div className="step-num">1</div>
+                                <span>Enter your child's phone number</span>
+                            </div>
+                            <input
+                                type="tel"
+                                placeholder="e.g. 07700123456"
+                                value={phone}
+                                onChange={e => setPhone(e.target.value)}
+                            />
+                            <div className="step">
+                                <div className="step-num">2</div>
+                                <span>Enter your home postcode</span>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="e.g. SW12 9RQ"
+                                value={postcode}
+                                onChange={e => setPostcode(e.target.value.toUpperCase())}
+                            />
+                            {error && <div className="error">{error}</div>}
+                            <button onClick={findStops} disabled={loading || !phone || !postcode}>
+                                {loading ? 'Finding stops...' : 'Find Nearby Stops →'}
+                            </button>
+                            <div className="phone-preview" style={{marginTop: '20px'}}>
+                                <div>💬 How it works:</div>
+                                <div style={{marginTop:'8px'}}>Child texts: <strong>HOME</strong></div>
+                                <div>Gets back: <strong>Bus 463: 4 mins</strong></div>
+                                <div style={{marginTop:'4px'}}>Child texts: <strong>SCHOOL</strong></div>
+                                <div>Gets back: <strong>Bus 154: 2 mins</strong></div>
+                            </div>
+                        </div>
+                    )}
+                    {step === 2 && (
+                        <div>
+                            <div className="card">
+                                <h2>📍 Stops near {postcode}</h2>
+                                <div className="map-container">
+                                    <div id="map" ref={mapRef}></div>
+                                </div>
+                                {nearbyStops.map((stop, i) => (
+                                    <div
+                                        key={i}
+                                        className={'stop-card' + (selectedStop === i ? ' selected' : '')}
+                                        onClick={() => setSelectedStop(i)}
+                                    >
+                                        <div className="stop-name">
+                                            {i + 1}. {stop.name}
+                                            {selectedStop === i && ' ✓'}
+                                        </div>
+                                        <div className="stop-buses">
+                                            Buses: {stop.buses.slice(0,6).map(b => (
+                                                <span key={b} className="tag">{b}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="card">
+                                <h2>🏷️ Name this stop</h2>
+                                <p style={{marginBottom:'12px', color:'#666'}}>
+                                    Select a stop above then give it a name your child will text
+                                </p>
+                                <div className="keyword-row">
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. HOME or SCHOOL"
+                                        value={keyword}
+                                        onChange={e => setKeyword(e.target.value.toUpperCase())}
+                                        maxLength={10}
+                                    />
+                                    <button onClick={addStop} style={{width:'auto', padding:'14px 20px'}}>
+                                        Add
+                                    </button>
+                                </div>
+                                {error && <div className="error">{error}</div>}
+                                {savedStops.length > 0 && (
+                                    <div>
+                                        <p style={{marginBottom:'10px', fontWeight:'600'}}>Saved stops:</p>
+                                        {savedStops.map(s => (
+                                            <div key={s.keyword} className="saved-stop">
+                                                <div>
+                                                    <div className="saved-stop-name">{s.keyword}</div>
+                                                    <div className="saved-stop-detail">{s.name}</div>
+                                                </div>
+                                                <button className="remove-btn" onClick={() => removeStop(s.keyword)}>✕</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="card">
+                                <h2>✅ All done?</h2>
+                                <p style={{marginBottom:'15px', color:'#666'}}>
+                                    Add as many stops as you need, then click finish.
+                                </p>
+                                {error && <div className="error">{error}</div>}
+                                <button onClick={saveAndFinish} disabled={loading || savedStops.length === 0}>
+                                    {loading ? 'Saving...' : 'Save & Finish 🎉'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    {step === 3 && (
+                        <div className="card">
+                            <div className="success">
+                                <h3>🎉 All set up!</h3>
+                                <p>Your child's stops have been saved.</p>
+                                <p style={{marginTop:'10px'}}>They can start texting right away!</p>
+                            </div>
+                            <div className="phone-preview" style={{marginTop:'20px'}}>
+                                <div style={{fontWeight:'600', marginBottom:'8px'}}>📱 Tell your child:</div>
+                                {savedStops.map(s => (
+                                    <div key={s.keyword}>Text <strong>{s.keyword}</strong> for buses from {s.name}</div>
+                                ))}
+                                <div style={{marginTop:'8px'}}>Text <strong>HELP</strong> to see all stops</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+    <script>
+        window.GOOGLE_MAPS_API_KEY = '%%GOOGLE_MAPS_API_KEY%%';
+    </script>
+    <script>
+        function loadGoogleMaps() {
+            const script = document.createElement('script');
+            script.src = 'https://maps.googleapis.com/maps/api/js?key=' + window.GOOGLE_MAPS_API_KEY + '&libraries=places';
+            script.async = true;
+            document.head.appendChild(script);
+        }
+        loadGoogleMaps();
+    </script>
+</body>
+</html>
