@@ -5,15 +5,87 @@ from urllib.parse import parse_qs
 from datetime import date
 import os
 import logging
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
-STOPS = {
-    'HOME':   [{'stop': '490016153N', 'buses': ['463']}],
-    'BACK':   [{'stop': '490012466H', 'buses': ['463']}],
-    'WOOD':   [{'stop': '490014834M', 'buses': ['154', '157']}],
-    'WILSON': [{'stop': '490009186S', 'buses': ['154']}, {'stop': '490011061W', 'buses': ['157']}],
-}
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+def get_db():
+    conn = psycopg2.connect(DATABASE_URL)
+    return conn
+
+def init_db():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            phone_number TEXT PRIMARY KEY,
+            name TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    ''')
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS stops (
+            id SERIAL PRIMARY KEY,
+            phone_number TEXT,
+            keyword TEXT,
+            stop_configs TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    ''')
+    conn.commit()
+    cur.close()
+    conn.close()
+
+init_db()
+
+ECF_SEARCH = 'https://rating.englishchess.org.uk/v2/new/api.php?v2/players/fuzzy_name/'
+ECF_RATING = 'https://rating.englishchess.org.uk/v2/new/api.php?v2/ratings/'
+
+def get_rating_for_code(ecf_code, domain):
+    today = str(date.today())
+    url = ECF_RATING + domain + '/' + ecf_code + '/' + today
+    try:
+        r = requests.get(url, timeout=10)
+        data = r.json()
+        if data.get('success'):
+            return str(data.get('revised_rating', 'N/A'))
+        return 'N/A'
+    except:
+        return 'N/A'
+
+def get_chess_rating(player_name):
+    search_name = player_name.replace(' ', '+')
+    try:
+        r = requests.get(ECF_SEARCH + search_name, timeout=10)
+        data = r.json()
+        players = data.get('players', [])
+        if not players:
+            return 'No players found for ' + player_name + '. Try LASTNAME FIRSTNAME e.g. Kennedy Aden'
+        elif len(players) == 1:
+            p = players[0]
+            name = p.get('full_name', 'Unknown')
+            ecf_code = p.get('ECF_code', '')
+            club = p.get('club_name', 'No club listed')
+            standard = get_rating_for_code(ecf_code, 'S')
+            rapid = get_rating_for_code(ecf_code, 'R')
+            return 'Chess: ' + name + '\nStandard: ' + standard + '\nRapid: ' + rapid + '\nClub: ' + club
+        else:
+            lines = ['Multiple players found. Try LASTNAME FIRSTNAME:']
+            for p in players[:5]:
+                name = p.get('full_name', 'Unknown')
+                club = p.get('club_name', '')
+                lines.append('- ' + name + ' - ' + club)
+            lines.append('e.g. Text: Kennedy Aden')
+            return '\n'.join(lines)
+    except Exception as e:
+        return 'Sorry, could not reach the ECF database. Please try again shortly.'
+
 def get_arrivals(stop_configs):
     try:
         all_arrivals = []
@@ -36,45 +108,64 @@ def get_arrivals(stop_configs):
         return '\n'.join(results)
     except Exception as e:
         return 'Error: ' + str(e)
-ECF_SEARCH = 'https://rating.englishchess.org.uk/v2/new/api.php?v2/players/fuzzy_name/'
-ECF_RATING = 'https://rating.englishchess.org.uk/v2/new/api.php?v2/ratings/'
-def get_rating_for_code(ecf_code, domain):
-    today = str(date.today())
-    url = ECF_RATING + domain + '/' + ecf_code + '/' + today
+
+def get_user_stops(phone_number, keyword):
     try:
-        r = requests.get(url, timeout=10)
-        data = r.json()
-        if data.get('success'):
-            return str(data.get('revised_rating', 'N/A'))
-        return 'N/A'
-    except:
-        return 'N/A'
-def get_chess_rating(player_name):
-    search_name = player_name.replace(' ', '+')
-    try:
-        r = requests.get(ECF_SEARCH + search_name, timeout=10)
-        data = r.json()
-        players = data.get('players', [])
-        if not players:
-            return 'No players found for ' + player_name + '. Try LASTNAME FIRSTNAME e.g. Kumar Sachin'
-        elif len(players) == 1:
-            p = players[0]
-            name = p.get('full_name', 'Unknown')
-            ecf_code = p.get('ECF_code', '')
-            club = p.get('club_name', 'No club listed')
-            standard = get_rating_for_code(ecf_code, 'S')
-            rapid = get_rating_for_code(ecf_code, 'R')
-            return 'Chess: ' + name + '\nStandard: ' + standard + '\nRapid: ' + rapid + '\nClub: ' + club
-        else:
-            lines = ['Multiple players found. Try LASTNAME FIRSTNAME:']
-            for p in players[:5]:
-                name = p.get('full_name', 'Unknown')
-                club = p.get('club_name', '')
-                lines.append('- ' + name + ' - ' + club)
-            lines.append('e.g. Text: Kennedy Aden')
-            return '\n'.join(lines)
+        conn = get_db()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute(
+            'SELECT stop_configs FROM stops WHERE phone_number = %s AND keyword = %s',
+            (phone_number, keyword.upper())
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if row:
+            import json
+            return json.loads(row['stop_configs'])
+        return None
     except Exception as e:
-        return 'Sorry, could not reach the ECF database. Please try again shortly.'
+        logger.error('DB error: ' + str(e))
+        return None
+
+def register_user(phone_number):
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO users (phone_number) VALUES (%s) ON CONFLICT DO NOTHING',
+            (phone_number,)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        logger.error('DB error: ' + str(e))
+
+def get_user_keywords(phone_number):
+    try:
+        conn = get_db()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute(
+            'SELECT keyword FROM stops WHERE phone_number = %s ORDER BY keyword',
+            (phone_number,)
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [row['keyword'] for row in rows]
+    except Exception as e:
+        logger.error('DB error: ' + str(e))
+        return []
+
+# Hardcoded stops still work for your family
+HARDCODED_STOPS = {
+    'HOME':   [{'stop': '490016153N', 'buses': ['463']}],
+    'BACK':   [{'stop': '490012466H', 'buses': ['463']}],
+    'WOOD':   [{'stop': '490014834M', 'buses': ['154', '157']}],
+    'WILSON': [{'stop': '490009186S', 'buses': ['154']}, {'stop': '490011061W', 'buses': ['157']}],
+}
+
 @app.route('/sms', methods=['GET', 'POST'])
 def sms_reply():
     body = request.args.get('Body')
@@ -87,17 +178,42 @@ def sms_reply():
         if raw:
             parsed = parse_qs(raw)
             body = (parsed.get('Body') or [''])[0]
+
     body = (body or '').strip()
     body_upper = body.upper()
+    phone_number = request.form.get('From', request.args.get('From', 'unknown'))
+
     resp = MessagingResponse()
-    if body_upper in STOPS:
-        message_text = get_arrivals(STOPS[body_upper])
-    elif body_upper in ('HELP', ''):
-        message_text = 'Bus times: Text HOME, BACK, WOOD or WILSON\nChess rating: Text LASTNAME FIRSTNAME e.g. Kennedy Aden'
+
+    # Register user automatically on first contact
+    if phone_number != 'unknown':
+        register_user(phone_number)
+
+    if body_upper == 'HELP' or body_upper == '':
+        keywords = get_user_keywords(phone_number)
+        if keywords:
+            stops_list = ', '.join(keywords)
+            message_text = 'Your stops: ' + stops_list + '\nText any stop name for live times.\nText CHESS LASTNAME FIRSTNAME for chess rating.'
+        else:
+            message_text = 'Welcome to TextMyRide!\nText HOME, BACK, WOOD or WILSON for bus times.\nText CHESS LASTNAME FIRSTNAME for chess rating.\nText HELP anytime for this message.'
+
+    elif body_upper.startswith('CHESS '):
+        player_name = body[6:].strip()
+        message_text = get_chess_rating(player_name)
+
+    elif body_upper in HARDCODED_STOPS:
+        message_text = get_arrivals(HARDCODED_STOPS[body_upper])
+
     else:
-        message_text = get_chess_rating(body)
+        user_stops = get_user_stops(phone_number, body_upper)
+        if user_stops:
+            message_text = get_arrivals(user_stops)
+        else:
+            message_text = 'Stop not found. Text HELP to see your stops.'
+
     resp.message(message_text)
     return str(resp)
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
