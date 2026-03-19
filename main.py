@@ -274,7 +274,67 @@ def api_register():
         except Exception as e:
             logger.error('Twilio error: ' + str(e))
     return {'success': True}
+import re
 
+@app.route('/')
+def index():
+    api_key = os.environ.get('GOOGLE_MAPS_API_KEY', '')
+    with open(os.path.join(os.path.dirname(__file__), 'static/index.html')) as f:
+        html = f.read()
+    html = html.replace('%%GOOGLE_MAPS_API_KEY%%', api_key)
+    return html
+
+@app.route('/api/find-stops', methods=['POST'])
+def api_find_stops():
+    data = request.get_json()
+    postcode = data.get('postcode', '').strip()
+    if not postcode:
+        return {'error': 'Please enter a postcode'}, 400
+    lat, lon = postcode_to_latlong(postcode)
+    if not lat:
+        return {'error': 'Could not find that postcode. Please try again.'}, 400
+    stops = find_nearby_stops(lat, lon)
+    if not stops:
+        return {'error': 'No bus stops found near ' + postcode + '. Try a nearby postcode.'}, 400
+    return {'stops': stops, 'center': {'lat': lat, 'lon': lon}}
+
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    data = request.get_json()
+    phone = data.get('phone', '').strip()
+    stops = data.get('stops', [])
+    if not phone:
+        return {'error': 'Please enter a phone number'}, 400
+    if not stops:
+        return {'error': 'Please add at least one stop'}, 400
+    phone_clean = re.sub(r'[^0-9+]', '', phone)
+    if not phone_clean:
+        return {'error': 'Invalid phone number'}, 400
+    register_user(phone_clean)
+    for stop in stops:
+        keyword = stop.get('keyword', '').upper()
+        stop_config = [{'stop': stop['stop'], 'buses': stop['buses']}]
+        save_user_stop(phone_clean, keyword, stop_config)
+    twilio_number = os.environ.get('TWILIO_NUMBER', '')
+    account_sid = os.environ.get('TWILIO_ACCOUNT_SID', '')
+    auth_token = os.environ.get('TWILIO_AUTH_TOKEN', '')
+    if twilio_number and account_sid and auth_token:
+        try:
+            from twilio.rest import Client
+            client = Client(account_sid, auth_token)
+            msg = 'Welcome to TextMyRide! Your stops are set up.\n'
+            for s in stops:
+                msg += 'Text ' + s['keyword'] + ' for buses from ' + s['name'] + '\n'
+            msg += 'Text HELP anytime to see your stops.'
+            client.messages.create(
+                body=msg,
+                from_=twilio_number,
+                to=phone_clean
+            )
+        except Exception as e:
+            logger.error('Twilio error: ' + str(e))
+    return {'success': True}
+    
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
