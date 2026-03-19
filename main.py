@@ -1,4 +1,4 @@
-from flask import Flask, request, Response
+from flask import Flask, request, Response, jsonify
 import requests
 from twilio.twiml.messaging_response import MessagingResponse
 from urllib.parse import parse_qs
@@ -6,6 +6,8 @@ from datetime import date
 import os
 import logging
 import psycopg2
+import json
+import re
 from psycopg2.extras import RealDictCursor
 
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +40,13 @@ def init_db():
             created_at TIMESTAMP DEFAULT NOW()
         )
     ''')
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS pending_setup (
+            phone_number TEXT PRIMARY KEY,
+            stops_json TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    ''')
     conn.commit()
     cur.close()
     conn.close()
@@ -46,6 +55,13 @@ init_db()
 
 ECF_SEARCH = 'https://rating.englishchess.org.uk/v2/new/api.php?v2/players/fuzzy_name/'
 ECF_RATING = 'https://rating.englishchess.org.uk/v2/new/api.php?v2/ratings/'
+
+HARDCODED_STOPS = {
+    'HOME':   [{'stop': '490016153N', 'buses': ['463']}],
+    'BACK':   [{'stop': '490012466H', 'buses': ['463']}],
+    'WOOD':   [{'stop': '490014834M', 'buses': ['154', '157']}],
+    'WILSON': [{'stop': '490009186S', 'buses': ['154']}, {'stop': '490011061W', 'buses': ['157']}],
+}
 
 def get_rating_for_code(ecf_code, domain):
     today = str(date.today())
@@ -81,7 +97,7 @@ def get_chess_rating(player_name):
                 name = p.get('full_name', 'Unknown')
                 club = p.get('club_name', '')
                 lines.append('- ' + name + ' - ' + club)
-            lines.append('e.g. Text: Kennedy Aden')
+            lines.append('e.g. Text: CHESS Kennedy Aden')
             return '\n'.join(lines)
     except Exception as e:
         return 'Sorry, could not reach the ECF database. Please try again shortly.'
@@ -109,24 +125,53 @@ def get_arrivals(stop_configs):
     except Exception as e:
         return 'Error: ' + str(e)
 
-def get_user_stops(phone_number, keyword):
+def postcode_to_latlong(postcode):
+    postcode_clean = postcode.replace(' ', '')
     try:
-        conn = get_db()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute(
-            'SELECT stop_configs FROM stops WHERE phone_number = %s AND keyword = %s',
-            (phone_number, keyword.upper())
+        r = requests.get('https://api.postcodes.io/postcodes/' + postcode_clean, timeout=10)
+        data = r.json()
+        if data.get('status') == 200:
+            return data['result']['latitude'], data['result']['longitude']
+        return None, None
+    except:
+        return None, None
+
+def find_nearby_stops(lat, lon):
+    try:
+        url = (
+            'https://api.tfl.gov.uk/StopPoint?'
+            'stopTypes=NaptanPublicBusCoachTram'
+            '&lat=' + str(lat) +
+            '&lon=' + str(lon) +
+            '&radius=400'
+            '&useStopPointHierarchy=false'
+            '&modes=bus'
+            '&returnLines=true'
         )
-        row = cur.fetchone()
-        cur.close()
-        conn.close()
-        if row:
-            import json
-            return json.loads(row['stop_configs'])
-        return None
+        r = requests.get(url, timeout=10)
+        data = r.json()
+        stops = data.get('stopPoints', [])
+        results = []
+        for s in stops[:6]:
+            name = s.get('commonName', 'Unknown')
+            stop_id = s.get('id', '')
+            lat_s = s.get('lat', 0)
+            lon_s = s.get('lon', 0)
+            lines = []
+            for mode in s.get('lineModeGroups', []):
+                lines.extend(mode.get('lineIdentifier', []))
+            if stop_id and lines:
+                results.append({
+                    'name': name,
+                    'stop': stop_id,
+                    'buses': lines[:6],
+                    'lat': lat_s,
+                    'lon': lon_s
+                })
+        return results
     except Exception as e:
-        logger.error('DB error: ' + str(e))
-        return None
+        logger.error('TfL error: ' + str(e))
+        return []
 
 def register_user(phone_number):
     try:
@@ -141,6 +186,44 @@ def register_user(phone_number):
         conn.close()
     except Exception as e:
         logger.error('DB error: ' + str(e))
+
+def save_user_stop(phone_number, keyword, stop_configs):
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            'DELETE FROM stops WHERE phone_number = %s AND keyword = %s',
+            (phone_number, keyword.upper())
+        )
+        cur.execute(
+            'INSERT INTO stops (phone_number, keyword, stop_configs) VALUES (%s, %s, %s)',
+            (phone_number, keyword.upper(), json.dumps(stop_configs))
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error('DB error: ' + str(e))
+        return False
+
+def get_user_stops(phone_number, keyword):
+    try:
+        conn = get_db()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute(
+            'SELECT stop_configs FROM stops WHERE phone_number = %s AND keyword = %s',
+            (phone_number, keyword.upper())
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if row:
+            return json.loads(row['stop_configs'])
+        return None
+    except Exception as e:
+        logger.error('DB error: ' + str(e))
+        return None
 
 def get_user_keywords(phone_number):
     try:
@@ -158,101 +241,6 @@ def get_user_keywords(phone_number):
         logger.error('DB error: ' + str(e))
         return []
 
-# Hardcoded stops still work for your family
-HARDCODED_STOPS = {
-    'HOME':   [{'stop': '490016153N', 'buses': ['463']}],
-    'BACK':   [{'stop': '490012466H', 'buses': ['463']}],
-    'WOOD':   [{'stop': '490014834M', 'buses': ['154', '157']}],
-    'WILSON': [{'stop': '490009186S', 'buses': ['154']}, {'stop': '490011061W', 'buses': ['157']}],
-}
-
-@app.route('/sms', methods=['GET', 'POST'])
-def sms_reply():
-    body = request.args.get('Body')
-    if not body:
-        body = request.form.get('Body')
-    if not body:
-        body = (request.get_json(silent=True) or {}).get('Body')
-    if not body:
-        raw = request.get_data(as_text=True)
-        if raw:
-            parsed = parse_qs(raw)
-            body = (parsed.get('Body') or [''])[0]
-
-    body = (body or '').strip()
-    body_upper = body.upper()
-    phone_number = request.form.get('From', request.args.get('From', 'unknown'))
-
-    resp = MessagingResponse()
-
-    # Register user automatically on first contact
-    if phone_number != 'unknown':
-        register_user(phone_number)
-
-    if body_upper == 'HELP' or body_upper == '':
-        keywords = get_user_keywords(phone_number)
-        if keywords:
-            stops_list = ', '.join(keywords)
-            message_text = 'Your stops: ' + stops_list + '\nText any stop name for live times.\nText CHESS LASTNAME FIRSTNAME for chess rating.'
-        else:
-            message_text = 'Welcome to TextMyRide!\nText HOME, BACK, WOOD or WILSON for bus times.\nText CHESS LASTNAME FIRSTNAME for chess rating.\nText HELP anytime for this message.'
-
-    elif body_upper.startswith('CHESS '):
-        player_name = body[6:].strip()
-        message_text = get_chess_rating(player_name)
-
-    elif body_upper in HARDCODED_STOPS:
-        message_text = get_arrivals(HARDCODED_STOPS[body_upper])
-
-    else:
-        user_stops = get_user_stops(phone_number, body_upper)
-        if user_stops:
-            message_text = get_arrivals(user_stops)
-        else:
-            message_text = 'Stop not found. Text HELP to see your stops.'
-
-    resp.message(message_text)
-    return str(resp)
-
-@app.route('/api/register', methods=['POST'])
-def api_register():
-    data = request.get_json()
-    phone = data.get('phone', '').strip()
-    stops = data.get('stops', [])
-    if not phone:
-        return {'error': 'Please enter a phone number'}, 400
-    if not stops:
-        return {'error': 'Please add at least one stop'}, 400
-    phone_clean = re.sub(r'[^0-9+]', '', phone)
-    if not phone_clean:
-        return {'error': 'Invalid phone number'}, 400
-    register_user(phone_clean)
-    for stop in stops:
-        keyword = stop.get('keyword', '').upper()
-        stop_config = [{'stop': stop['stop'], 'buses': stop['buses']}]
-        save_user_stop(phone_clean, keyword, stop_config)
-    twilio_number = os.environ.get('TWILIO_NUMBER', '')
-    account_sid = os.environ.get('TWILIO_ACCOUNT_SID', '')
-    auth_token = os.environ.get('TWILIO_AUTH_TOKEN', '')
-    if twilio_number and account_sid and auth_token:
-        try:
-            from twilio.rest import Client
-            client = Client(account_sid, auth_token)
-            keywords = [s['keyword'] for s in stops]
-            msg = 'Welcome to TextMyRide! Your stops are set up.\n'
-            for s in stops:
-                msg += 'Text ' + s['keyword'] + ' for buses from ' + s['name'] + '\n'
-            msg += 'Text HELP anytime to see your stops.'
-            client.messages.create(
-                body=msg,
-                from_=twilio_number,
-                to=phone_clean
-            )
-        except Exception as e:
-            logger.error('Twilio error: ' + str(e))
-    return {'success': True}
-import re
-
 @app.route('/')
 def index():
     api_key = os.environ.get('GOOGLE_MAPS_API_KEY', '')
@@ -266,14 +254,14 @@ def api_find_stops():
     data = request.get_json()
     postcode = data.get('postcode', '').strip()
     if not postcode:
-        return {'error': 'Please enter a postcode'}, 400
+        return jsonify({'error': 'Please enter a postcode'}), 400
     lat, lon = postcode_to_latlong(postcode)
     if not lat:
-        return {'error': 'Could not find that postcode. Please try again.'}, 400
+        return jsonify({'error': 'Could not find that postcode. Please try again.'}), 400
     stops = find_nearby_stops(lat, lon)
     if not stops:
-        return {'error': 'No bus stops found near ' + postcode + '. Try a nearby postcode.'}, 400
-    return {'stops': stops, 'center': {'lat': lat, 'lon': lon}}
+        return jsonify({'error': 'No bus stops found near ' + postcode + '. Try a nearby postcode.'}), 400
+    return jsonify({'stops': stops, 'center': {'lat': lat, 'lon': lon}})
 
 @app.route('/api/register', methods=['POST'])
 def api_register():
@@ -281,12 +269,12 @@ def api_register():
     phone = data.get('phone', '').strip()
     stops = data.get('stops', [])
     if not phone:
-        return {'error': 'Please enter a phone number'}, 400
+        return jsonify({'error': 'Please enter a phone number'}), 400
     if not stops:
-        return {'error': 'Please add at least one stop'}, 400
+        return jsonify({'error': 'Please add at least one stop'}), 400
     phone_clean = re.sub(r'[^0-9+]', '', phone)
     if not phone_clean:
-        return {'error': 'Invalid phone number'}, 400
+        return jsonify({'error': 'Invalid phone number'}), 400
     register_user(phone_clean)
     for stop in stops:
         keyword = stop.get('keyword', '').upper()
@@ -303,15 +291,50 @@ def api_register():
             for s in stops:
                 msg += 'Text ' + s['keyword'] + ' for buses from ' + s['name'] + '\n'
             msg += 'Text HELP anytime to see your stops.'
-            client.messages.create(
-                body=msg,
-                from_=twilio_number,
-                to=phone_clean
-            )
+            client.messages.create(body=msg, from_=twilio_number, to=phone_clean)
         except Exception as e:
             logger.error('Twilio error: ' + str(e))
-    return {'success': True}
-    
+    return jsonify({'success': True})
+
+@app.route('/sms', methods=['GET', 'POST'])
+def sms_reply():
+    body = request.args.get('Body')
+    if not body:
+        body = request.form.get('Body')
+    if not body:
+        body = (request.get_json(silent=True) or {}).get('Body')
+    if not body:
+        raw = request.get_data(as_text=True)
+        if raw:
+            parsed = parse_qs(raw)
+            body = (parsed.get('Body') or [''])[0]
+    body = (body or '').strip()
+    body_upper = body.upper()
+    phone_number = request.form.get('From', request.args.get('From', 'unknown'))
+    resp = MessagingResponse()
+    if phone_number != 'unknown':
+        register_user(phone_number)
+    if body_upper in ('HELP', ''):
+        keywords = get_user_keywords(phone_number)
+        if keywords:
+            stops_list = ', '.join(keywords)
+            message_text = 'TextMyRide - Your stops: ' + stops_list + '\nText any stop name for live times.\nText CHESS LASTNAME FIRSTNAME for chess rating.'
+        else:
+            message_text = 'Welcome to TextMyRide!\nVisit textmyride.co.uk to set up your stops.\nText CHESS LASTNAME FIRSTNAME for chess rating.'
+    elif body_upper.startswith('CHESS '):
+        player_name = body[6:].strip()
+        message_text = get_chess_rating(player_name)
+    elif body_upper in HARDCODED_STOPS:
+        message_text = get_arrivals(HARDCODED_STOPS[body_upper])
+    else:
+        user_stops = get_user_stops(phone_number, body_upper)
+        if user_stops:
+            message_text = get_arrivals(user_stops)
+        else:
+            message_text = 'Stop not found. Visit textmyride.co.uk to set up your stops or text HELP.'
+    resp.message(message_text)
+    return str(resp)
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
