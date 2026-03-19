@@ -160,7 +160,7 @@ def find_nearby_stops(lat, lon):
             lines = []
             for mode in s.get('lineModeGroups', []):
                 lines.extend(mode.get('lineIdentifier', []))
-           indicator = s.get('indicator', '')
+            indicator = s.get('indicator', '')
             towards = s.get('towards', '')
             direction = towards if towards else indicator
             display_name = name + (' (' + direction + ')' if direction else '')
