@@ -180,11 +180,14 @@ def find_nearby_stops(lat, lon, radius=400):
 
 def normalise_phone(phone):
     phone = re.sub(r'[^0-9+]', '', phone)
-    if phone.startswith('07'):
+    if phone.startswith('07') and len(phone) == 11:
         phone = '+44' + phone[1:]
+    elif phone.startswith('447') and len(phone) == 12:
+        phone = '+' + phone
     return phone
-    
+
 def register_user(phone_number):
+    phone_number = normalise_phone(phone_number)
     try:
         conn = get_db()
         cur = conn.cursor()
@@ -199,6 +202,7 @@ def register_user(phone_number):
         logger.error('DB error: ' + str(e))
 
 def save_user_stop(phone_number, keyword, stop_configs):
+    phone_number = normalise_phone(phone_number)
     try:
         conn = get_db()
         cur = conn.cursor()
@@ -219,6 +223,7 @@ def save_user_stop(phone_number, keyword, stop_configs):
         return False
 
 def get_user_stops(phone_number, keyword):
+    phone_number = normalise_phone(phone_number)
     try:
         conn = get_db()
         cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -237,6 +242,7 @@ def get_user_stops(phone_number, keyword):
         return None
 
 def get_user_keywords(phone_number):
+    phone_number = normalise_phone(phone_number)
     try:
         conn = get_db()
         cur = conn.cursor(cursor_factory=RealDictCursor)
