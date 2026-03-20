@@ -373,9 +373,10 @@ def sms_reply():
     else:
         user_stops = get_user_stops(phone_number, body_upper)
         if user_stops:
-            stop_type = user_stops[0].get('type', 'bus') if user_stops else 'bus'
+            first = user_stops[0] if isinstance(user_stops, list) and len(user_stops) > 0 else {}
+            stop_type = first.get('type', 'bus')
             if stop_type == 'train':
-                message_text = get_train_times(user_stops[0])
+                message_text = get_train_times(first)
             else:
                 message_text = get_arrivals(user_stops)
         else:
