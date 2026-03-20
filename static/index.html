@@ -19,9 +19,11 @@
         .nav-link.active { background: #e8f0fe; color: #1a73e8; font-weight: 600; }
         .nav-cta { background: #1a73e8; color: white; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 0.9em; font-weight: 600; border: none; transition: background 0.2s; }
         .nav-cta:hover { background: #1557b0; }
+        .nav-manage { background: white; color: #1a73e8; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 0.9em; font-weight: 600; border: 2px solid #1a73e8; transition: all 0.2s; margin-right: 8px; }
+        .nav-manage:hover { background: #e8f0fe; }
         .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 80px 20px; text-align: center; }
         .hero h1 { font-size: 2.8em; font-weight: 800; margin-bottom: 15px; line-height: 1.2; }
-        .hero p { font-size: 1.2em; opacity: 0.9; max-width: 500px; margin: 0 auto 30px; line-height: 1.6; }
+        .hero p { font-size: 1.2em; opacity: 0.9; max-width: 560px; margin: 0 auto 30px; line-height: 1.6; }
         .hero-btns { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
         .btn-primary { background: white; color: #1a73e8; padding: 14px 28px; border-radius: 10px; font-size: 1em; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
@@ -60,6 +62,7 @@
         .step-num { background: #1a73e8; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 12px; flex-shrink: 0; }
         input { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1em; margin-bottom: 12px; transition: border-color 0.2s; }
         input:focus { outline: none; border-color: #1a73e8; }
+        input:disabled { background: #f5f5f5; color: #999; }
         button { width: 100%; padding: 14px; background: #1a73e8; color: white; border: none; border-radius: 10px; font-size: 1em; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         button:hover { background: #1557b0; }
         button:disabled { background: #ccc; cursor: not-allowed; }
@@ -75,12 +78,16 @@
         .saved-stop-name { font-weight: 600; color: #1a73e8; }
         .saved-stop-detail { color: #666; font-size: 0.9em; }
         .remove-btn { background: none; border: none; color: #e53935; cursor: pointer; font-size: 1.2em; width: auto; padding: 0 5px; }
+        .remove-btn:hover { background: none; color: #c62828; }
         .success { background: #e8f5e9; border: 2px solid #4caf50; border-radius: 10px; padding: 20px; text-align: center; }
         .success h3 { color: #2e7d32; font-size: 1.3em; margin-bottom: 10px; }
         .success p { color: #388e3c; }
         .phone-preview { background: #f5f5f5; border-radius: 10px; padding: 15px; font-family: monospace; font-size: 0.9em; margin-top: 15px; }
         .tag { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 3px 10px; border-radius: 20px; font-size: 0.85em; margin: 3px; }
         .error { color: #e53935; font-size: 0.9em; margin-bottom: 10px; }
+        .info-box { background: #e8f0fe; border: 2px solid #1a73e8; border-radius: 10px; padding: 14px; margin-bottom: 14px; color: #1a73e8; font-size: 0.95em; }
+        .warning-box { background: #fff8e1; border: 2px solid #ffc107; border-radius: 10px; padding: 14px; margin-bottom: 14px; color: #856404; font-size: 0.95em; }
+        .verified-box { background: #e8f5e9; border: 2px solid #4caf50; border-radius: 10px; padding: 12px 15px; margin-bottom: 15px; color: #2e7d32; font-weight: 600; }
         .show-more-btn { background: white; color: #1a73e8; border: 2px solid #1a73e8; margin-top: 10px; }
         .show-more-btn:hover { background: #e8f0fe; }
         .show-less-btn { background: white; color: #666; border: 2px solid #ccc; margin-top: 10px; }
@@ -103,10 +110,6 @@
         .contact-card h3 { font-weight: 700; margin-bottom: 8px; }
         .contact-card p { color: #666; font-size: 0.9em; line-height: 1.5; }
         .contact-card a { color: #1a73e8; text-decoration: none; font-weight: 600; }
-        .footer { background: #1a1a2e; color: #aaa; text-align: center; padding: 30px 20px; font-size: 0.9em; }
-        .footer-logo { color: white; font-size: 1.2em; font-weight: 800; margin-bottom: 10px; }
-        .footer a { color: #aaa; text-decoration: none; margin: 0 10px; }
-        .footer a:hover { color: white; }
         .plan-card { border: 2px solid #e0e0e0; border-radius: 12px; padding: 20px; margin-bottom: 15px; }
         .plan-card.featured { border-color: #1a73e8; background: #f8f9ff; }
         .plan-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -115,6 +118,24 @@
         .plan-features { color: #666; font-size: 0.9em; margin-bottom: 15px; line-height: 1.8; }
         .btn-outline { background: white; color: #1a73e8; border: 2px solid #1a73e8; }
         .btn-outline:hover { background: #e8f0fe; }
+        .btn-danger { background: white; color: #e53935; border: 2px solid #e53935; }
+        .btn-danger:hover { background: #ffebee; }
+        .btn-green { background: #34a853; }
+        .btn-green:hover { background: #2d8f47; }
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .plan-badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 0.85em; font-weight: 700; }
+        .plan-badge.free { background: #f0f4f8; color: #666; }
+        .plan-badge.basic { background: #e8f0fe; color: #1a73e8; }
+        .plan-badge.family { background: #e8f5e9; color: #2e7d32; }
+        .stop-limit-bar { background: #f0f4f8; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .stop-limit-text { font-size: 0.9em; color: #555; }
+        .stop-limit-count { font-weight: 700; color: #1a73e8; }
+        .family-member { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #e8f5e9; border-radius: 10px; margin-bottom: 8px; font-size: 0.95em; }
+        .footer { background: #1a1a2e; color: #aaa; text-align: center; padding: 30px 20px; font-size: 0.9em; }
+        .footer-logo { color: white; font-size: 1.2em; font-weight: 800; margin-bottom: 10px; }
+        .footer a { color: #aaa; text-decoration: none; margin: 0 10px; }
+        .footer a:hover { color: white; }
+        .cancelled-banner { background: #fff3cd; border: 2px solid #ffc107; border-radius: 10px; padding: 14px; margin-bottom: 20px; color: #856404; text-align: center; font-weight: 600; }
         #map { width: 100%; height: 100%; }
         @media (max-width: 600px) { .hero h1 { font-size: 2em; } .nav-links { display: none; } .stats-inner { gap: 30px; } }
     </style>
@@ -124,7 +145,14 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        function Nav({ page, setPage }) {
+        const RESERVED = ['HELP','CHESS','STOP','EXIT','QUIT','CANCEL','INFO','STATUS','BUS','TRAIN'];
+        const PLAN_LIMITS = { free: 2, basic: 5, family: 10 };
+
+        function getToken() { try { return localStorage.getItem('tmr_session'); } catch(e) { return null; } }
+        function setToken(t) { try { localStorage.setItem('tmr_session', t); } catch(e) {} }
+        function clearToken() { try { localStorage.removeItem('tmr_session'); } catch(e) {} }
+
+        function Nav({ page, setPage, loggedIn, onLogout }) {
             return (
                 <nav className="nav">
                     <div className="nav-inner">
@@ -134,20 +162,37 @@
                             <button className={'nav-link' + (page === 'how' ? ' active' : '')} onClick={() => setPage('how')}>How it works</button>
                             <button className={'nav-link' + (page === 'contact' ? ' active' : '')} onClick={() => setPage('contact')}>Contact</button>
                         </div>
-                        <button className="nav-cta" onClick={() => setPage('setup')}>Get Started →</button>
+                        <div style={{display:'flex',gap:'8px'}}>
+                            {loggedIn ? (
+                                <>
+                                    <button className="nav-manage" onClick={() => setPage('dashboard')}>My Stops</button>
+                                    <button className="nav-cta" onClick={onLogout}>Log out</button>
+                                </>
+                            ) : (
+                                <>
+                                    <button className="nav-manage" onClick={() => setPage('login')}>Manage My Stops</button>
+                                    <button className="nav-cta" onClick={() => setPage('verify')}>Get Started →</button>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </nav>
             );
         }
 
-        function HomePage({ setPage }) {
+        function HomePage({ setPage, cancelled }) {
             return (
                 <div>
+                    {cancelled && (
+                        <div style={{padding: '20px'}}>
+                            <div className="cancelled-banner">⚠️ Payment was cancelled. You can try again anytime from your dashboard.</div>
+                        </div>
+                    )}
                     <div className="hero">
-                        <h1>Live Bus & Train Times<br/>by SMS 📱</h1>
-                        <p>No smartphone needed. Your child texts a stop name and gets live times back instantly.</p>
+                        <h1>Their stop. Their times.<br/>Their independence. 📱</h1>
+                        <p>No smartphone needed. Your child texts a stop name and gets live times back instantly — without calling you every time they miss a bus.</p>
                         <div className="hero-btns">
-                            <button className="btn-primary" onClick={() => setPage('setup')}>Set Up Your Stops →</button>
+                            <button className="btn-primary" onClick={() => setPage('verify')}>Set Up Your Stops →</button>
                             <button className="btn-secondary" onClick={() => setPage('how')}>How It Works</button>
                         </div>
                     </div>
@@ -165,12 +210,12 @@
                             <div className="section-sub">No app to download. No smartphone needed. Just text.</div>
                             <div className="demo">
                                 <div className="demo-header">💬 Messages · TextMyRide</div>
+                                <div className="msg msg-out"><span className="bubble bubble-out">SCHOOL</span></div>
+                                <div className="msg msg-in"><span className="bubble bubble-in">🚌 Bus 271: 2 mins<br/>Bus 271: 14 mins<br/>Bus 271: 28 mins</span></div>
                                 <div className="msg msg-out"><span className="bubble bubble-out">HOME</span></div>
-                                <div className="msg msg-in"><span className="bubble bubble-in">🚌 Bus 463: 3 mins<br/>Bus 463: 11 mins<br/>Bus 463: 24 mins</span></div>
-                                <div className="msg msg-out"><span className="bubble bubble-out">TRAIN</span></div>
-                                <div className="msg msg-in"><span className="bubble bubble-in">🚂 Balham → London Bridge<br/>08:42 On time<br/>08:57 On time<br/>09:12 2 mins late</span></div>
+                                <div className="msg msg-in"><span className="bubble bubble-in">🚌 Bus 119: 5 mins<br/>Bus 119: 18 mins</span></div>
                                 <div className="msg msg-out"><span className="bubble bubble-out">HELP</span></div>
-                                <div className="msg msg-in"><span className="bubble bubble-in">Your stops: HOME, TRAIN<br/>Text any stop for live times!</span></div>
+                                <div className="msg msg-in"><span className="bubble bubble-in">Your stops: HOME, SCHOOL<br/>Text any stop for live times!</span></div>
                             </div>
                         </div>
                     </div>
@@ -191,7 +236,7 @@
                     <div className="section" style={{background: '#1a73e8', color: 'white', textAlign: 'center'}}>
                         <div className="section-title" style={{color: 'white'}}>Ready to get started? 🚀</div>
                         <p style={{color: 'rgba(255,255,255,0.9)', marginBottom: '25px', fontSize: '1.05em'}}>Set up your child's stops in under 2 minutes</p>
-                        <button className="btn-primary" onClick={() => setPage('setup')} style={{width: 'auto', padding: '14px 35px', fontSize: '1.1em'}}>Set Up Now →</button>
+                        <button className="btn-primary" onClick={() => setPage('verify')} style={{width: 'auto', padding: '14px 35px', fontSize: '1.1em'}}>Set Up Now →</button>
                     </div>
                 </div>
             );
@@ -223,7 +268,7 @@
                                 {[
                                     { cmd: 'HOME', desc: 'Get live bus times at your home stop' },
                                     { cmd: 'SCHOOL', desc: 'Get live bus times at your school stop' },
-                                    { cmd: 'TRAIN', desc: 'Get live train times from your station' },
+                                    { cmd: 'STATION', desc: 'Get live train times from your station' },
                                     { cmd: 'HELP', desc: 'See all your saved stop names' },
                                 ].map(item => (
                                     <div key={item.cmd} style={{display: 'flex', alignItems: 'center', background: 'white', borderRadius: '10px', padding: '15px', marginBottom: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)'}}>
@@ -237,7 +282,7 @@
                     <div className="section" style={{background: '#1a73e8', color: 'white', textAlign: 'center'}}>
                         <div className="section-title" style={{color: 'white'}}>Ready to set up? 🚀</div>
                         <p style={{color: 'rgba(255,255,255,0.9)', marginBottom: '25px'}}>Takes less than 2 minutes</p>
-                        <button className="btn-primary" onClick={() => setPage('setup')} style={{width: 'auto', padding: '14px 35px', fontSize: '1.1em'}}>Set Up Your Stops →</button>
+                        <button className="btn-primary" onClick={() => setPage('verify')} style={{width: 'auto', padding: '14px 35px', fontSize: '1.1em'}}>Set Up Your Stops →</button>
                     </div>
                 </div>
             );
@@ -264,11 +309,106 @@
             );
         }
 
-        function SetupPage() {
-            const [formStep, setFormStep] = useState(1);
+        function VerifyPage({ setPage, onVerified, mode }) {
             const [phone, setPhone] = useState('');
-            const [postcode, setPostcode] = useState('');
+            const [codeSent, setCodeSent] = useState(false);
+            const [code, setCode] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+
+            async function sendCode() {
+                if (!phone.trim()) { setError('Please enter a phone number'); return; }
+                setLoading(true); setError('');
+                try {
+                    const res = await fetch('/api/send-verification', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ phone })
+                    });
+                    const data = await res.json();
+                    if (data.error) { setError(data.error); }
+                    else { setCodeSent(true); }
+                } catch(e) { setError('Could not send code. Please try again.'); }
+                setLoading(false);
+            }
+
+            async function checkCode() {
+                if (!code.trim()) { setError('Please enter the code'); return; }
+                setLoading(true); setError('');
+                try {
+                    const res = await fetch('/api/check-verification', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ phone, code })
+                    });
+                    const data = await res.json();
+                    if (data.error) { setError(data.error); }
+                    else {
+                        setToken(data.token);
+                        onVerified(data.token, data.is_new_user, data.plan);
+                    }
+                } catch(e) { setError('Could not verify. Please try again.'); }
+                setLoading(false);
+            }
+
+            const title = mode === 'login' ? '🔑 Log in to your account' : '📱 Verify your child\'s phone';
+            const subtitle = mode === 'login' ? 'Enter your phone number to log in' : 'We\'ll send a code to verify the number';
+
+            return (
+                <div>
+                    <div className="hero" style={{padding: '40px 20px'}}>
+                        <h1 style={{fontSize: '2em'}}>{mode === 'login' ? 'Welcome back' : 'Get Started'}</h1>
+                        <p style={{fontSize: '1em'}}>{subtitle}</p>
+                    </div>
+                    <div style={{maxWidth: '500px', margin: '30px auto', padding: '0 20px'}}>
+                        <div className="card">
+                            <h2>{title}</h2>
+                            <input
+                                type="tel"
+                                placeholder="e.g. 07700123456"
+                                value={phone}
+                                onChange={e => { setPhone(e.target.value); setCodeSent(false); setCode(''); setError(''); }}
+                                disabled={codeSent}
+                            />
+                            {!codeSent && (
+                                <>
+                                    {error && <div className="error">{error}</div>}
+                                    <button onClick={sendCode} disabled={loading || !phone}>
+                                        {loading ? 'Sending...' : 'Send Verification Code →'}
+                                    </button>
+                                </>
+                            )}
+                            {codeSent && (
+                                <div>
+                                    <div className="info-box">📱 Code sent to {phone}. Check the phone!</div>
+                                    <input
+                                        type="number"
+                                        placeholder="Enter 6-digit code"
+                                        value={code}
+                                        onChange={e => setCode(e.target.value)}
+                                        maxLength={6}
+                                    />
+                                    {error && <div className="error">{error}</div>}
+                                    <button onClick={checkCode} disabled={loading || !code}>
+                                        {loading ? 'Verifying...' : 'Verify & Continue →'}
+                                    </button>
+                                    <button onClick={() => { setCodeSent(false); setCode(''); setError(''); }}
+                                        style={{background:'white', color:'#666', border:'2px solid #ccc', marginTop:'10px'}}>
+                                        ← Use a different number
+                                    </button>
+                                    <button onClick={sendCode} disabled={loading}
+                                        style={{background:'white', color:'#1a73e8', border:'2px solid #1a73e8', marginTop:'8px'}}>
+                                        Resend code
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function AddStopPage({ token, plan, stopCount, stopLimit, onStopAdded, onBack }) {
             const [stopType, setStopType] = useState('bus');
+            const [postcode, setPostcode] = useState('');
             const [nearbyStops, setNearbyStops] = useState([]);
             const [selectedStop, setSelectedStop] = useState(null);
             const [selectedBuses, setSelectedBuses] = useState([]);
@@ -278,28 +418,26 @@
             const [destinations, setDestinations] = useState([]);
             const [selectedDests, setSelectedDests] = useState([]);
             const [keyword, setKeyword] = useState('');
-            const [savedStops, setSavedStops] = useState([]);
             const [error, setError] = useState('');
             const [loading, setLoading] = useState(false);
             const [mapCenter, setMapCenter] = useState(null);
             const [showingMore, setShowingMore] = useState(false);
+            const [step, setStep] = useState(1);
             const mapRef = useRef(null);
             const googleMapRef = useRef(null);
             const markersRef = useRef([]);
 
             useEffect(() => {
-                if (formStep === 2 && mapCenter && window.google && stopType === 'bus') {
+                if (step === 2 && mapCenter && window.google && stopType === 'bus') {
                     initMap();
                 }
-            }, [formStep, mapCenter, nearbyStops, stopType]);
+            }, [step, mapCenter, nearbyStops, stopType]);
 
             function initMap() {
                 if (!mapRef.current) return;
                 googleMapRef.current = new window.google.maps.Map(mapRef.current, {
                     center: { lat: mapCenter.lat, lng: mapCenter.lon },
-                    zoom: 15,
-                    mapTypeControl: false,
-                    streetViewControl: false,
+                    zoom: 15, mapTypeControl: false, streetViewControl: false,
                 });
                 markersRef.current.forEach(m => m.setMap(null));
                 markersRef.current = [];
@@ -314,9 +452,7 @@
                             path: window.google.maps.SymbolPath.CIRCLE,
                             scale: 18,
                             fillColor: selectedStop === i ? '#0d47a1' : '#1a73e8',
-                            fillOpacity: 1,
-                            strokeColor: 'white',
-                            strokeWeight: 2,
+                            fillOpacity: 1, strokeColor: 'white', strokeWeight: 2,
                         }
                     });
                     marker.addListener('click', () => { setSelectedStop(i); setSelectedBuses([]); });
@@ -325,180 +461,135 @@
             }
 
             async function findStops(radius = 400) {
-                setError('');
-                setLoading(true);
+                setError(''); setLoading(true);
                 try {
                     const res = await fetch('/api/find-stops', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        method: 'POST', headers: {'Content-Type':'application/json'},
                         body: JSON.stringify({ postcode, radius })
                     });
                     const data = await res.json();
                     if (data.error) { setError(data.error); }
-                    else { setNearbyStops(data.stops); setMapCenter(data.center); setFormStep(2); }
-                } catch (e) { setError('Could not find stops. Please try again.'); }
+                    else { setNearbyStops(data.stops); setMapCenter(data.center); setStep(2); }
+                } catch(e) { setError('Could not find stops. Please try again.'); }
                 setLoading(false);
             }
 
             async function searchStations() {
                 if (!stationSearch.trim()) return;
-                setLoading(true);
-                setError('');
+                setLoading(true); setError('');
                 try {
                     const res = await fetch('/api/find-stations', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        method: 'POST', headers: {'Content-Type':'application/json'},
                         body: JSON.stringify({ query: stationSearch })
                     });
                     const data = await res.json();
                     if (data.error) { setError(data.error); }
                     else { setStationResults(data.stations); }
-                } catch (e) { setError('Could not search stations. Please try again.'); }
+                } catch(e) { setError('Could not search stations.'); }
                 setLoading(false);
             }
 
             async function selectStation(station) {
-                setSelectedStation(station);
-                setSelectedDests([]);
-                setLoading(true);
+                setSelectedStation(station); setSelectedDests([]); setLoading(true);
                 try {
                     const res = await fetch('/api/train-destinations', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        method: 'POST', headers: {'Content-Type':'application/json'},
                         body: JSON.stringify({ crs: station.crs })
                     });
                     const data = await res.json();
                     if (data.destinations) { setDestinations(data.destinations); }
-                } catch (e) { setError('Could not load destinations.'); }
+                } catch(e) { setError('Could not load destinations.'); }
                 setLoading(false);
             }
 
             function toggleBus(bus) {
-                setSelectedBuses(prev =>
-                    prev.includes(bus) ? prev.filter(b => b !== bus) : [...prev, bus]
-                );
+                setSelectedBuses(prev => prev.includes(bus) ? prev.filter(b => b !== bus) : [...prev, bus]);
             }
 
             function toggleDest(dest) {
-                setSelectedDests(prev =>
-                    prev.includes(dest) ? prev.filter(d => d !== dest) : [...prev, dest]
-                );
+                setSelectedDests(prev => prev.includes(dest) ? prev.filter(d => d !== dest) : [...prev, dest]);
             }
 
-            function addStop() {
+            async function saveStop() {
                 setError('');
-                if (!keyword.trim()) { setError('Please enter a name like HOME or SCHOOL'); return; }
                 const kw = keyword.trim().toUpperCase();
-                if (savedStops.find(s => s.keyword === kw)) { setError('You already have a stop called ' + kw); return; }
+                if (!kw) { setError('Please enter a keyword name'); return; }
+                if (RESERVED.includes(kw)) { setError('"' + kw + '" is reserved. Please choose a different name.'); return; }
+                if (!/^[A-Z0-9]{1,10}$/.test(kw)) { setError('Keyword must be letters/numbers only, max 10 characters'); return; }
 
+                let stopData = {};
                 if (stopType === 'bus') {
-                    if (selectedStop === null) { setError('Please select a stop first'); return; }
+                    if (selectedStop === null) { setError('Please select a stop'); return; }
                     if (selectedBuses.length === 0) { setError('Please select at least one bus'); return; }
-                    const stop = nearbyStops[selectedStop];
-                    setSavedStops([...savedStops, {
-                        keyword: kw,
-                        type: 'bus',
-                        name: stop.name,
-                        stop: stop.stop,
-                        buses: selectedBuses
-                    }]);
+                    const s = nearbyStops[selectedStop];
+                    stopData = { type: 'bus', stop: s.stop, buses: selectedBuses, name: s.name };
                 } else {
-                    if (!selectedStation) { setError('Please select a station first'); return; }
+                    if (!selectedStation) { setError('Please select a station'); return; }
                     if (selectedDests.length === 0) { setError('Please select at least one destination'); return; }
-                    setSavedStops([...savedStops, {
-                        keyword: kw,
-                        type: 'train',
-                        name: selectedStation.name,
-                        crs: selectedStation.crs,
-                        destinations: selectedDests
-                    }]);
+                    stopData = { type: 'train', crs: selectedStation.crs, name: selectedStation.name, destinations: selectedDests };
                 }
-                setSelectedStop(null);
-                setSelectedBuses([]);
-                setSelectedStation(null);
-                setSelectedDests([]);
-                setDestinations([]);
-                setStationResults([]);
-                setStationSearch('');
-                setKeyword('');
-            }
 
-            function removeStop(kw) {
-                setSavedStops(savedStops.filter(s => s.keyword !== kw));
-            }
-
-            function saveAndFinish() {
-                if (!phone.trim()) { setError('Please enter a phone number'); return; }
-                if (savedStops.length === 0) { setError('Please add at least one stop'); return; }
-                setError('');
-                setFormStep(3);
-            }
-
-            async function completePurchase(plan) {
                 setLoading(true);
-                setError('');
                 try {
-                    const res = await fetch('/api/register', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ phone, stops: savedStops, plan })
+                    const res = await fetch('/api/add-stop', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ token, keyword: kw, stop: stopData })
                     });
                     const data = await res.json();
-                    if (data.error) { setError(data.error); setLoading(false); return; }
-                    if (data.requires_payment) {
-                        const checkoutRes = await fetch('/api/create-checkout', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ phone, plan })
-                        });
-                        const checkoutData = await checkoutRes.json();
-                        if (checkoutData.checkout_url) {
-                            window.location.href = checkoutData.checkout_url;
-                        } else {
-                            setError('Could not start checkout. Please try again.');
-                        }
-                    } else {
-                        setFormStep(4);
-                    }
-                } catch (e) { setError('Something went wrong. Please try again.'); }
+                    if (data.error) { setError(data.error); }
+                    else { onStopAdded(); }
+                } catch(e) { setError('Could not save stop. Please try again.'); }
                 setLoading(false);
+            }
+
+            if (stopCount >= stopLimit) {
+                const nextPlan = plan === 'free' ? 'basic' : 'family';
+                const nextLimit = PLAN_LIMITS[nextPlan];
+                return (
+                    <div style={{maxWidth:'600px', margin:'30px auto', padding:'0 20px'}}>
+                        <div className="card">
+                            <h2>⚠️ Stop limit reached</h2>
+                            <div className="warning-box">
+                                You've used all {stopLimit} stops on your {plan.charAt(0).toUpperCase()+plan.slice(1)} plan.
+                                Upgrade to {nextPlan.charAt(0).toUpperCase()+nextPlan.slice(1)} to add up to {nextLimit} stops.
+                            </div>
+                            <button onClick={() => onStopAdded('upgrade')} style={{marginBottom:'10px'}}>
+                                Upgrade to {nextPlan.charAt(0).toUpperCase()+nextPlan.slice(1)} →
+                            </button>
+                            <button onClick={onBack} className="btn-outline">← Back to dashboard</button>
+                        </div>
+                    </div>
+                );
             }
 
             return (
                 <div>
                     <div className="hero" style={{padding: '40px 20px'}}>
-                        <h1 style={{fontSize: '2em'}}>Set Up Your Stops</h1>
-                        <p style={{fontSize: '1em'}}>Takes less than 2 minutes</p>
+                        <h1 style={{fontSize: '2em'}}>Add a Stop</h1>
+                        <p style={{fontSize: '1em'}}>{stopCount}/{stopLimit} stops used on your {plan.charAt(0).toUpperCase()+plan.slice(1)} plan</p>
                     </div>
-                    <div style={{maxWidth: '600px', margin: '30px auto', padding: '0 20px'}}>
-
-                        {formStep === 1 && (
+                    <div style={{maxWidth:'600px', margin:'30px auto', padding:'0 20px'}}>
+                        {step === 1 && (
                             <div className="card">
-                                <h2>📱 Your child's details</h2>
-                                <div className="step-row"><div className="step-num">1</div><span>Enter your child's phone number</span></div>
-                                <input type="tel" placeholder="e.g. 07700123456" value={phone} onChange={e => setPhone(e.target.value)} />
-                                <p style={{fontSize: '0.85em', color: '#666', marginBottom: '12px'}}>Enter your child's UK mobile number</p>
-                                <div className="step-row"><div className="step-num">2</div><span>What would you like to add?</span></div>
+                                <h2>🚌 What would you like to add?</h2>
                                 <div className="type-toggle">
-                                    <button className={'type-btn' + (stopType === 'bus' ? ' active' : '')} onClick={() => { setStopType('bus'); setKeyword(''); setSelectedStation(null); setStationResults([]); setDestinations([]); setSelectedDests([]); }}>🚌 Bus Stop</button>
-                                    <button className={'type-btn' + (stopType === 'train' ? ' active' : '')} onClick={() => { setStopType('train'); setKeyword(''); setSelectedStop(null); setSelectedBuses([]); }}>🚂 Train Station</button>
+                                    <button className={'type-btn' + (stopType === 'bus' ? ' active' : '')} onClick={() => { setStopType('bus'); setSelectedStation(null); setStationResults([]); setDestinations([]); setSelectedDests([]); }}>🚌 Bus Stop</button>
+                                    <button className={'type-btn' + (stopType === 'train' ? ' active' : '')} onClick={() => { setStopType('train'); setSelectedStop(null); setSelectedBuses([]); }}>🚂 Train Station</button>
                                 </div>
                                 {stopType === 'bus' && (
                                     <>
-                                        <div className="step-row"><div className="step-num">3</div><span>Enter your postcode to find nearby stops</span></div>
-                                        <input type="text" placeholder="e.g. SW12 9RQ" value={postcode} onChange={e => setPostcode(e.target.value.toUpperCase())} />
+                                        <input type="text" placeholder="Enter postcode e.g. SW12 9RQ" value={postcode} onChange={e => setPostcode(e.target.value.toUpperCase())} />
                                         {error && <div className="error">{error}</div>}
-                                        <button onClick={() => findStops(400)} disabled={loading || !phone || !postcode}>
+                                        <button onClick={() => findStops(400)} disabled={loading || !postcode}>
                                             {loading ? 'Finding stops...' : 'Find Nearby Bus Stops →'}
                                         </button>
                                     </>
                                 )}
                                 {stopType === 'train' && (
                                     <>
-                                        <div className="step-row"><div className="step-num">3</div><span>Search for your train station</span></div>
                                         <div className="keyword-row">
-                                            <input type="text" placeholder="e.g. Balham" value={stationSearch} onChange={e => setStationSearch(e.target.value)} style={{marginBottom: 0}} />
-                                            <button onClick={searchStations} style={{width: 'auto', padding: '14px 20px'}} disabled={loading || !phone || !stationSearch}>
+                                            <input type="text" placeholder="e.g. Balham" value={stationSearch} onChange={e => setStationSearch(e.target.value)} style={{marginBottom:0}} />
+                                            <button onClick={searchStations} style={{width:'auto', padding:'14px 20px'}} disabled={loading || !stationSearch}>
                                                 {loading ? '...' : 'Search'}
                                             </button>
                                         </div>
@@ -510,8 +601,8 @@
                                             </div>
                                         ))}
                                         {selectedStation && destinations.length > 0 && (
-                                            <div style={{marginTop: '15px'}}>
-                                                <p style={{fontWeight: '600', marginBottom: '10px'}}>Which destinations do you want? (tick all that apply)</p>
+                                            <div style={{marginTop:'15px'}}>
+                                                <p style={{fontWeight:'600', marginBottom:'10px'}}>Which destinations? (tick all that apply)</p>
                                                 {destinations.map((dest, i) => (
                                                     <div key={i} className={'dest-item' + (selectedDests.includes(dest) ? ' checked' : '')} onClick={() => toggleDest(dest)}>
                                                         <input type="checkbox" checked={selectedDests.includes(dest)} onChange={() => {}} />
@@ -520,37 +611,22 @@
                                                 ))}
                                             </div>
                                         )}
-                                        {selectedStation && (
-                                            <div style={{marginTop: '15px'}}>
-                                                <input type="text" placeholder="Name this stop e.g. TRAIN or BALHAM" value={keyword} onChange={e => setKeyword(e.target.value.toUpperCase())} maxLength={10} />
-                                                <button onClick={addStop} disabled={!keyword || selectedDests.length === 0}>
-                                                    Add Train Stop
-                                                </button>
-                                            </div>
-                                        )}
-                                        {savedStops.length > 0 && (
-                                            <div style={{marginTop: '20px'}}>
-                                                <p style={{fontWeight: '600', marginBottom: '10px'}}>Saved stops:</p>
-                                                {savedStops.map(s => (
-                                                    <div key={s.keyword} className="saved-stop">
-                                                        <div>
-                                                            <div className="saved-stop-name">{s.keyword} {s.type === 'train' ? '🚂' : '🚌'}</div>
-                                                            <div className="saved-stop-detail">{s.name}</div>
-                                                        </div>
-                                                        <button className="remove-btn" onClick={() => removeStop(s.keyword)}>✕</button>
-                                                    </div>
-                                                ))}
-                                                <button onClick={saveAndFinish} disabled={loading} style={{marginTop: '15px'}}>
-                                                    {loading ? 'Saving...' : 'Save & Finish 🎉'}
+                                        {selectedStation && selectedDests.length > 0 && (
+                                            <div style={{marginTop:'15px'}}>
+                                                <input type="text" placeholder="Name this stop e.g. STATION" value={keyword} onChange={e => setKeyword(e.target.value.toUpperCase())} maxLength={10} />
+                                                {error && <div className="error">{error}</div>}
+                                                <button onClick={saveStop} disabled={loading || !keyword}>
+                                                    {loading ? 'Saving...' : 'Save Stop →'}
                                                 </button>
                                             </div>
                                         )}
                                     </>
                                 )}
+                                <button onClick={onBack} style={{background:'white', color:'#666', border:'2px solid #ccc', marginTop:'12px'}}>← Back</button>
                             </div>
                         )}
 
-                        {formStep === 2 && stopType === 'bus' && (
+                        {step === 2 && stopType === 'bus' && (
                             <div>
                                 <div className="card">
                                     <h2>📍 Stops near {postcode}</h2>
@@ -571,7 +647,7 @@
                                 {selectedStop !== null && (
                                     <div className="card">
                                         <h2>🚌 Which buses do you want?</h2>
-                                        <p style={{color: '#666', marginBottom: '12px'}}>Tick only the buses your child uses from <strong>{nearbyStops[selectedStop].name}</strong></p>
+                                        <p style={{color:'#666', marginBottom:'12px'}}>Tick only the buses your child uses from <strong>{nearbyStops[selectedStop].name}</strong></p>
                                         <div className="checkbox-grid">
                                             {nearbyStops[selectedStop].buses.map(bus => (
                                                 <div key={bus} className={'checkbox-item' + (selectedBuses.includes(bus) ? ' checked' : '')} onClick={() => toggleBus(bus)}>
@@ -581,112 +657,312 @@
                                             ))}
                                         </div>
                                         {selectedBuses.length > 0 && (
-                                            <div style={{marginTop: '15px'}}>
-                                                <p style={{fontWeight: '600', marginBottom: '8px'}}>Name this stop:</p>
+                                            <div style={{marginTop:'15px'}}>
+                                                <p style={{fontWeight:'600', marginBottom:'8px'}}>Name this stop:</p>
                                                 <div className="keyword-row">
-                                                    <input type="text" placeholder="e.g. HOME or SCHOOL" value={keyword} onChange={e => setKeyword(e.target.value.toUpperCase())} maxLength={10} style={{marginBottom: 0}} />
-                                                    <button onClick={addStop} style={{width: 'auto', padding: '14px 20px'}}>Add</button>
+                                                    <input type="text" placeholder="e.g. HOME or SCHOOL" value={keyword} onChange={e => setKeyword(e.target.value.toUpperCase())} maxLength={10} style={{marginBottom:0}} />
+                                                    <button onClick={saveStop} style={{width:'auto', padding:'14px 20px'}} disabled={loading}>
+                                                        {loading ? '...' : 'Save'}
+                                                    </button>
                                                 </div>
                                                 {error && <div className="error">{error}</div>}
                                             </div>
                                         )}
                                     </div>
                                 )}
+                                <button onClick={onBack} style={{background:'white', color:'#666', border:'2px solid #ccc', marginBottom:'20px'}}>← Back to dashboard</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
 
-                                {savedStops.length > 0 && (
-                                    <div className="card">
-                                        <h2>✅ Saved stops</h2>
-                                        {savedStops.map(s => (
-                                            <div key={s.keyword} className="saved-stop">
-                                                <div>
-                                                    <div className="saved-stop-name">{s.keyword} {s.type === 'train' ? '🚂' : '🚌'}</div>
-                                                    <div className="saved-stop-detail">{s.name} · {s.type === 'bus' ? s.buses.join(', ') : s.destinations.join(', ')}</div>
-                                                </div>
-                                                <button className="remove-btn" onClick={() => removeStop(s.keyword)}>✕</button>
-                                            </div>
-                                        ))}
-                                        <button onClick={() => { setStopType('train'); setFormStep(1); }} style={{background: 'white', color: '#1a73e8', border: '2px solid #1a73e8', marginTop: '10px', marginBottom: '10px'}}>
-                                            + Add a train station too
-                                        </button>
-                                        {error && <div className="error">{error}</div>}
-                                        <button onClick={saveAndFinish} disabled={loading}>
-                                            {loading ? 'Saving...' : 'Save & Finish 🎉'}
+        function PlanPage({ token, onComplete }) {
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+
+            async function choosePlan(plan) {
+                setLoading(true); setError('');
+                if (plan === 'free') {
+                    onComplete('free');
+                    setLoading(false);
+                    return;
+                }
+                try {
+                    const res = await fetch('/api/create-checkout', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ token, plan })
+                    });
+                    const data = await res.json();
+                    if (data.checkout_url) {
+                        window.location.href = data.checkout_url;
+                    } else {
+                        setError(data.error || 'Could not start checkout.');
+                    }
+                } catch(e) { setError('Something went wrong. Please try again.'); }
+                setLoading(false);
+            }
+
+            return (
+                <div style={{maxWidth:'600px', margin:'30px auto', padding:'0 20px'}}>
+                    <div className="card">
+                        <h2>💳 Choose your plan</h2>
+                        <p style={{color:'#666', marginBottom:'20px'}}>Your stops are ready — pick a plan to activate them.</p>
+                        {error && <div className="error">{error}</div>}
+
+                        <div className="plan-card">
+                            <div className="plan-header">
+                                <div className="plan-name">Free</div>
+                                <div className="plan-price">£0/month</div>
+                            </div>
+                            <div className="plan-features">✓ 1 phone number<br/>✓ Up to 2 stops<br/>✓ Bus &amp; train times</div>
+                            <button className="btn-outline" onClick={() => choosePlan('free')} disabled={loading}>
+                                {loading ? 'Setting up...' : 'Continue Free →'}
+                            </button>
+                        </div>
+
+                        <div className="plan-card featured">
+                            <div className="plan-header">
+                                <div className="plan-name">Basic ⭐</div>
+                                <div className="plan-price">£2.99/month</div>
+                            </div>
+                            <div className="plan-features">✓ 1 phone number<br/>✓ Up to 5 stops<br/>✓ Priority support</div>
+                            <button onClick={() => choosePlan('basic')} disabled={loading}>
+                                {loading ? 'Setting up...' : 'Choose Basic →'}
+                            </button>
+                        </div>
+
+                        <div className="plan-card">
+                            <div className="plan-header">
+                                <div className="plan-name">Family 👨‍👩‍👧</div>
+                                <div className="plan-price">£4.99/month</div>
+                            </div>
+                            <div className="plan-features">✓ Up to 5 phone numbers<br/>✓ Up to 10 stops per number<br/>✓ Priority support</div>
+                            <button className="btn-outline" onClick={() => choosePlan('family')} disabled={loading}>
+                                {loading ? 'Setting up...' : 'Choose Family →'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function DashboardPage({ token, setPage, onLogout }) {
+            const [userData, setUserData] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState('');
+            const [view, setView] = useState('dashboard');
+            const [newMemberPhone, setNewMemberPhone] = useState('');
+            const [memberLoading, setMemberLoading] = useState(false);
+            const [memberError, setMemberError] = useState('');
+            const [memberSuccess, setMemberSuccess] = useState('');
+            const [deleteConfirm, setDeleteConfirm] = useState(false);
+
+            useEffect(() => { loadUser(); }, []);
+
+            async function loadUser() {
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/get-user', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ token })
+                    });
+                    const data = await res.json();
+                    if (data.error) { clearToken(); onLogout(); return; }
+                    setUserData(data);
+                } catch(e) { setError('Could not load your account.'); }
+                setLoading(false);
+            }
+
+            async function deleteStop(keyword) {
+                try {
+                    const res = await fetch('/api/delete-stop', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ token, keyword })
+                    });
+                    const data = await res.json();
+                    if (data.success) { loadUser(); }
+                } catch(e) { setError('Could not delete stop.'); }
+            }
+
+            async function addFamilyMember() {
+                if (!newMemberPhone.trim()) { setMemberError('Please enter a phone number'); return; }
+                setMemberLoading(true); setMemberError(''); setMemberSuccess('');
+                try {
+                    const res = await fetch('/api/add-family-member', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ token, member_phone: newMemberPhone })
+                    });
+                    const data = await res.json();
+                    if (data.error) { setMemberError(data.error); }
+                    else { setMemberSuccess('Family member added! They\'ll receive a welcome text.'); setNewMemberPhone(''); loadUser(); }
+                } catch(e) { setMemberError('Could not add family member.'); }
+                setMemberLoading(false);
+            }
+
+            async function deleteAccount() {
+                try {
+                    const res = await fetch('/api/delete-account', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ token })
+                    });
+                    const data = await res.json();
+                    if (data.success) { clearToken(); onLogout(); }
+                } catch(e) { setError('Could not delete account.'); }
+            }
+
+            async function upgradePlan(plan) {
+                try {
+                    const res = await fetch('/api/create-checkout', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ token, plan })
+                    });
+                    const data = await res.json();
+                    if (data.checkout_url) { window.location.href = data.checkout_url; }
+                } catch(e) { setError('Could not start checkout.'); }
+            }
+
+            if (loading) return <div style={{textAlign:'center', padding:'60px', color:'#666'}}>Loading your account...</div>;
+            if (!userData) return null;
+
+            if (view === 'add') {
+                return <AddStopPage
+                    token={token}
+                    plan={userData.plan}
+                    stopCount={userData.stop_count}
+                    stopLimit={userData.stop_limit}
+                    onStopAdded={(action) => {
+                        if (action === 'upgrade') { upgradePlan(userData.plan === 'free' ? 'basic' : 'family'); }
+                        else { setView('dashboard'); loadUser(); }
+                    }}
+                    onBack={() => setView('dashboard')}
+                />;
+            }
+
+            const planColors = { free: '#888', basic: '#1a73e8', family: '#34a853' };
+            const canUpgrade = userData.plan !== 'family';
+            const atLimit = userData.stop_count >= userData.stop_limit;
+
+            return (
+                <div>
+                    <div className="hero" style={{padding:'40px 20px'}}>
+                        <h1 style={{fontSize:'2em'}}>My Stops Dashboard</h1>
+                        <p style={{fontSize:'1em'}}>{userData.phone}</p>
+                    </div>
+                    <div style={{maxWidth:'600px', margin:'30px auto', padding:'0 20px'}}>
+                        {error && <div className="error">{error}</div>}
+
+                        {/* Plan summary */}
+                        <div className="card">
+                            <div className="dashboard-header">
+                                <h2 style={{marginBottom:0}}>Your plan</h2>
+                                <span className={'plan-badge ' + userData.plan}>
+                                    {userData.plan.charAt(0).toUpperCase()+userData.plan.slice(1)}
+                                </span>
+                            </div>
+                            <div className="stop-limit-bar">
+                                <span className="stop-limit-text">Stops used</span>
+                                <span className="stop-limit-count">{userData.stop_count} / {userData.stop_limit}</span>
+                            </div>
+                            {canUpgrade && (
+                                <button onClick={() => upgradePlan(userData.plan === 'free' ? 'basic' : 'family')}
+                                    style={{background:'white', color:'#1a73e8', border:'2px solid #1a73e8', fontSize:'0.9em'}}>
+                                    ⬆️ Upgrade to {userData.plan === 'free' ? 'Basic (5 stops)' : 'Family (10 stops + 5 numbers)'}
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Stops */}
+                        <div className="card">
+                            <h2>📍 Your stops</h2>
+                            {userData.stops.length === 0 ? (
+                                <p style={{color:'#666', marginBottom:'15px'}}>No stops set up yet. Add your first stop below!</p>
+                            ) : (
+                                userData.stops.map(s => (
+                                    <div key={s.keyword} className="saved-stop">
+                                        <div>
+                                            <div className="saved-stop-name">{s.keyword} {s.type === 'train' ? '🚂' : '🚌'}</div>
+                                            <div className="saved-stop-detail">{s.name}</div>
+                                        </div>
+                                        <button className="remove-btn" onClick={() => deleteStop(s.keyword)}>✕</button>
+                                    </div>
+                                ))
+                            )}
+                            {atLimit ? (
+                                <div className="warning-box" style={{marginTop:'10px'}}>
+                                    ⚠️ Stop limit reached ({userData.stop_limit} stops on {userData.plan} plan).
+                                    <button onClick={() => upgradePlan(userData.plan === 'free' ? 'basic' : 'family')}
+                                        style={{marginTop:'8px', fontSize:'0.9em'}}>
+                                        Upgrade to add more stops →
+                                    </button>
+                                </div>
+                            ) : (
+                                <button className="btn-green" onClick={() => setView('add')} style={{marginTop:'10px'}}>
+                                    + Add a stop ({userData.stop_limit - userData.stop_count} remaining)
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Family members */}
+                        {userData.is_family_owner && (
+                            <div className="card">
+                                <h2>👨‍👩‍👧 Family members</h2>
+                                <p style={{color:'#666', marginBottom:'15px', fontSize:'0.9em'}}>
+                                    {userData.family_members.length}/4 additional members added
+                                </p>
+                                {userData.family_members.map(m => (
+                                    <div key={m} className="family-member">
+                                        <span>📱 {m}</span>
+                                    </div>
+                                ))}
+                                {userData.family_members.length < 4 && (
+                                    <div style={{marginTop:'15px'}}>
+                                        <input type="tel" placeholder="e.g. 07700123456"
+                                            value={newMemberPhone}
+                                            onChange={e => setNewMemberPhone(e.target.value)} />
+                                        {memberError && <div className="error">{memberError}</div>}
+                                        {memberSuccess && <div className="verified-box">{memberSuccess}</div>}
+                                        <button onClick={addFamilyMember} disabled={memberLoading || !newMemberPhone} className="btn-green">
+                                            {memberLoading ? 'Adding...' : '+ Add family member'}
                                         </button>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {formStep === 3 && (
+                        {/* Quick reference */}
+                        {userData.stops.length > 0 && (
                             <div className="card">
-                                <h2>💳 Choose your plan</h2>
-                                <p style={{color: '#666', marginBottom: '20px'}}>Your stops are ready — pick a plan to activate them.</p>
-                                {error && <div className="error">{error}</div>}
-
-                                <div className="plan-card">
-                                    <div className="plan-header">
-                                        <div className="plan-name">Free</div>
-                                        <div className="plan-price">£0/month</div>
-                                    </div>
-                                    <div className="plan-features">
-                                        ✓ 1 phone number<br/>
-                                        ✓ Unlimited texts<br/>
-                                        ✓ Bus &amp; train times
-                                    </div>
-                                    <button className="btn-outline" onClick={() => completePurchase('free')} disabled={loading}>
-                                        {loading ? 'Setting up...' : 'Continue Free →'}
-                                    </button>
-                                </div>
-
-                                <div className="plan-card featured">
-                                    <div className="plan-header">
-                                        <div className="plan-name">Basic ⭐</div>
-                                        <div className="plan-price">£2.99/month</div>
-                                    </div>
-                                    <div className="plan-features">
-                                        ✓ 1 phone number<br/>
-                                        ✓ Unlimited texts<br/>
-                                        ✓ Priority support
-                                    </div>
-                                    <button onClick={() => completePurchase('basic')} disabled={loading}>
-                                        {loading ? 'Setting up...' : 'Choose Basic →'}
-                                    </button>
-                                </div>
-
-                                <div className="plan-card">
-                                    <div className="plan-header">
-                                        <div className="plan-name">Family 👨‍👩‍👧</div>
-                                        <div className="plan-price">£4.99/month</div>
-                                    </div>
-                                    <div className="plan-features">
-                                        ✓ Up to 5 phone numbers<br/>
-                                        ✓ Unlimited texts<br/>
-                                        ✓ Priority support
-                                    </div>
-                                    <button className="btn-outline" onClick={() => completePurchase('family')} disabled={loading}>
-                                        {loading ? 'Setting up...' : 'Choose Family →'}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {formStep === 4 && (
-                            <div className="card">
-                                <div className="success">
-                                    <h3>🎉 All set up!</h3>
-                                    <p>Your child's stops have been saved.</p>
-                                    <p style={{marginTop: '10px'}}>They'll receive a welcome text shortly!</p>
-                                </div>
-                                <div className="phone-preview" style={{marginTop: '20px'}}>
-                                    <div style={{fontWeight: '600', marginBottom: '8px'}}>📱 Tell your child:</div>
-                                    {savedStops.map(s => (
+                                <h2>📱 Tell your child</h2>
+                                <div className="phone-preview">
+                                    {userData.stops.map(s => (
                                         <div key={s.keyword}>Text <strong>{s.keyword}</strong> for {s.type === 'train' ? 'trains from' : 'buses at'} {s.name}</div>
                                     ))}
-                                    <div style={{marginTop: '8px'}}>Text <strong>HELP</strong> to see all stops</div>
+                                    <div style={{marginTop:'8px'}}>Text <strong>HELP</strong> to see all stops</div>
                                 </div>
                             </div>
                         )}
 
+                        {/* Danger zone */}
+                        <div className="card">
+                            <h2 style={{color:'#e53935'}}>⚠️ Danger zone</h2>
+                            {!deleteConfirm ? (
+                                <button className="btn-danger" onClick={() => setDeleteConfirm(true)}>
+                                    Delete my account
+                                </button>
+                            ) : (
+                                <div>
+                                    <div className="warning-box">This will permanently delete your account, all stops and cancel any subscription. This cannot be undone.</div>
+                                    <button className="btn-danger" onClick={deleteAccount} style={{marginBottom:'8px'}}>
+                                        Yes, permanently delete my account
+                                    </button>
+                                    <button className="btn-outline" onClick={() => setDeleteConfirm(false)}>
+                                        Cancel
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             );
@@ -694,19 +970,53 @@
 
         function App() {
             const [page, setPage] = useState('home');
-            useEffect(() => { window.scrollTo(0, 0); }, [page]);
+            const [token, setTokenState] = useState(getToken);
+            const [cancelled, setCancelled] = useState(false);
+
+            useEffect(() => {
+                window.scrollTo(0, 0);
+                if (window.location.search.includes('cancelled=true')) {
+                    setCancelled(true);
+                    window.history.replaceState({}, '', '/');
+                }
+            }, [page]);
+
+            useEffect(() => {
+                // Auto-login if valid token exists
+                if (token) { setPage('dashboard'); }
+            }, []);
+
+            function handleVerified(tok, isNewUser, plan) {
+                setTokenState(tok);
+                if (isNewUser) { setPage('setup'); }
+                else { setPage('dashboard'); }
+            }
+
+            function handleLogout() {
+                clearToken();
+                setTokenState(null);
+                setPage('home');
+            }
+
+            function handleSetupComplete(plan) {
+                if (plan === 'free') { setPage('dashboard'); }
+            }
+
             return (
                 <div>
-                    <Nav page={page} setPage={setPage} />
-                    {page === 'home' && <HomePage setPage={setPage} />}
+                    <Nav page={page} setPage={setPage} loggedIn={!!token} onLogout={handleLogout} />
+                    {page === 'home' && <HomePage setPage={setPage} cancelled={cancelled} />}
                     {page === 'how' && <HowItWorksPage setPage={setPage} />}
                     {page === 'contact' && <ContactPage />}
-                    {page === 'setup' && <SetupPage />}
+                    {page === 'verify' && <VerifyPage setPage={setPage} onVerified={handleVerified} mode="new" />}
+                    {page === 'login' && <VerifyPage setPage={setPage} onVerified={handleVerified} mode="login" />}
+                    {page === 'setup' && <PlanPage token={token} onComplete={handleSetupComplete} />}
+                    {page === 'dashboard' && token && <DashboardPage token={token} setPage={setPage} onLogout={handleLogout} />}
                     <footer className="footer">
                         <div className="footer-logo">🚌 TextMyRide</div>
-                        <p style={{marginBottom: '10px'}}>Live bus & train times by SMS</p>
+                        <p style={{marginBottom:'10px'}}>Live bus & train times by SMS</p>
                         <div><a href="mailto:hello@textmyride.co.uk">Contact</a></div>
-                        <p style={{marginTop: '15px', fontSize: '0.8em'}}>© 2026 TextMyRide. All rights reserved.</p>
+                        <p style={{marginTop:'15px', fontSize:'0.8em'}}>© 2026 TextMyRide. All rights reserved.</p>
                     </footer>
                 </div>
             );
