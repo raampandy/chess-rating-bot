@@ -284,7 +284,10 @@ def api_register():
     register_user(phone_clean)
     for stop in stops:
         keyword = stop.get('keyword', '').upper()
-        stop_config = [{'stop': stop['stop'], 'buses': stop['buses']}]
+        if stop.get('type') == 'train':
+            stop_config = [{'type': 'train', 'crs': stop['crs'], 'name': stop['name'], 'destinations': stop.get('destinations', [])}]
+        else:
+            stop_config = [{'type': 'bus', 'stop': stop['stop'], 'buses': stop['buses']}]
         save_user_stop(phone_clean, keyword, stop_config)
     twilio_number = os.environ.get('TWILIO_NUMBER', '')
     account_sid = os.environ.get('TWILIO_ACCOUNT_SID', '')
@@ -301,7 +304,42 @@ def api_register():
         except Exception as e:
             logger.error('Twilio error: ' + str(e))
     return jsonify({'success': True})
-
+def get_train_times(stop_config):
+    crs = stop_config.get('crs', '')
+    destinations = stop_config.get('destinations', [])
+    if not crs:
+        return 'Sorry, train stop not configured correctly.'
+    try:
+        r = requests.get('https://huxley2.azurewebsites.net/departures/' + crs + '/15', timeout=10)
+        data = r.json()
+        services = data.get('trainServices', []) or []
+        station_name = data.get('locationName', crs)
+        results = []
+        for s in services:
+            dest_list = s.get('destination', [])
+            dest_names = [d.get('locationName', '') for d in dest_list]
+            if destinations and not any(d in destinations for d in dest_names):
+                continue
+            std = s.get('std', 'N/A')
+            etd = s.get('etd', 'On time')
+            dest = dest_names[0] if dest_names else 'Unknown'
+            platform = s.get('platform', '')
+            platform_str = ' Plat ' + platform if platform else ''
+            if etd == 'On time':
+                status = 'On time'
+            elif etd == 'Cancelled':
+                status = 'CANCELLED'
+            else:
+                status = etd
+            results.append(std + ' -> ' + dest + platform_str + ' (' + status + ')')
+            if len(results) >= 5:
+                break
+        if not results:
+            return 'No upcoming trains found from ' + station_name + '.'
+        return chr(10).join(['Trains from ' + station_name + ':'] + results)
+    except Exception as e:
+        return 'Sorry, could not reach train data. Please try again shortly.'
+        
 @app.route('/sms', methods=['GET', 'POST'])
 def sms_reply():
     body = request.args.get('Body')
@@ -335,12 +373,50 @@ def sms_reply():
     else:
         user_stops = get_user_stops(phone_number, body_upper)
         if user_stops:
-            message_text = get_arrivals(user_stops)
+            stop_type = user_stops[0].get('type', 'bus') if user_stops else 'bus'
+            if stop_type == 'train':
+                message_text = get_train_times(user_stops[0])
+            else:
+                message_text = get_arrivals(user_stops)
         else:
             message_text = 'Stop not found. Visit textmyride.co.uk to set up your stops or text HELP.'
     resp.message(message_text)
     return str(resp)
+@app.route('/api/find-stations', methods=['POST'])
+def api_find_stations():
+    data = request.get_json()
+    query = data.get('query', '').strip()
+    if not query:
+        return jsonify({'error': 'Please enter a station name'}), 400
+    try:
+        r = requests.get('https://huxley2.azurewebsites.net/crs/' + query, timeout=10)
+        stations = r.json()
+        results = [{'name': s['stationName'], 'crs': s['crsCode']} for s in stations[:8]]
+        return jsonify({'stations': results})
+    except Exception as e:
+        return jsonify({'error': 'Could not search stations. Please try again.'}), 400
 
+@app.route('/api/train-destinations', methods=['POST'])
+def api_train_destinations():
+    data = request.get_json()
+    crs = data.get('crs', '').strip()
+    if not crs:
+        return jsonify({'error': 'Please provide a station code'}), 400
+    try:
+        r = requests.get('https://huxley2.azurewebsites.net/departures/' + crs + '/25', timeout=10)
+        data = r.json()
+        services = data.get('trainServices', []) or []
+        dests = []
+        for s in services:
+            dest_list = s.get('destination', [])
+            for d in dest_list:
+                name = d.get('locationName', '')
+                if name and name not in dests:
+                    dests.append(name)
+        return jsonify({'destinations': sorted(dests[:15])})
+    except Exception as e:
+        return jsonify({'error': 'Could not load destinations.'}), 400
+        
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
