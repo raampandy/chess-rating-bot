@@ -178,6 +178,12 @@ def find_nearby_stops(lat, lon, radius=400):
         logger.error('TfL error: ' + str(e))
         return []
 
+def normalise_phone(phone):
+    phone = re.sub(r'[^0-9+]', '', phone)
+    if phone.startswith('07'):
+        phone = '+44' + phone[1:]
+    return phone
+    
 def register_user(phone_number):
     try:
         conn = get_db()
@@ -354,7 +360,8 @@ def sms_reply():
             body = (parsed.get('Body') or [''])[0]
     body = (body or '').strip()
     body_upper = body.upper()
-    phone_number = request.form.get('From', request.args.get('From', 'unknown'))
+    raw_phone = request.form.get('From', request.args.get('From', 'unknown'))
+    phone_number = normalise_phone(raw_phone) if raw_phone != 'unknown' else 'unknown'
     resp = MessagingResponse()
     if phone_number != 'unknown':
         register_user(phone_number)
