@@ -3,20 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TextMyRide - Live Bus Times by SMS</title>
+    <title>TextMyRide - Live Bus & Train Times by SMS</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; color: #333; }
-        .header { background: linear-gradient(135deg, #1a73e8, #0d47a1); color: white; padding: 20px; text-align: center; }
-        .header h1 { font-size: 2em; margin-bottom: 5px; }
-        .header p { opacity: 0.9; font-size: 1.1em; }
-        .container { max-width: 600px; margin: 30px auto; padding: 0 20px; }
+
+        /* NAV */
+        .nav { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
+        .nav-inner { max-width: 900px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 60px; }
+        .nav-logo { font-size: 1.3em; font-weight: 800; color: #1a73e8; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .nav-links { display: flex; gap: 5px; }
+        .nav-link { padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9em; color: #555; border: none; background: none; transition: all 0.2s; }
+        .nav-link:hover { background: #f0f4f8; color: #1a73e8; }
+        .nav-link.active { background: #e8f0fe; color: #1a73e8; font-weight: 600; }
+        .nav-cta { background: #1a73e8; color: white; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 0.9em; font-weight: 600; border: none; transition: background 0.2s; }
+        .nav-cta:hover { background: #1557b0; }
+
+        /* HERO */
+        .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 80px 20px; text-align: center; }
+        .hero h1 { font-size: 2.8em; font-weight: 800; margin-bottom: 15px; line-height: 1.2; }
+        .hero p { font-size: 1.2em; opacity: 0.9; max-width: 500px; margin: 0 auto 30px; line-height: 1.6; }
+        .hero-btns { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .btn-primary { background: white; color: #1a73e8; padding: 14px 28px; border-radius: 10px; font-size: 1em; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .btn-secondary { background: transparent; color: white; padding: 14px 28px; border-radius: 10px; font-size: 1em; font-weight: 600; cursor: pointer; border: 2px solid rgba(255,255,255,0.6); transition: all 0.2s; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+        /* STATS BAR */
+        .stats { background: white; padding: 25px 20px; }
+        .stats-inner { max-width: 900px; margin: 0 auto; display: flex; justify-content: center; gap: 60px; flex-wrap: wrap; }
+        .stat { text-align: center; }
+        .stat-num { font-size: 2em; font-weight: 800; color: #1a73e8; }
+        .stat-label { font-size: 0.85em; color: #666; margin-top: 4px; }
+
+        /* SECTIONS */
+        .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+        .section { padding: 60px 20px; }
+        .section-title { text-align: center; font-size: 1.8em; font-weight: 700; margin-bottom: 10px; }
+        .section-sub { text-align: center; color: #666; margin-bottom: 40px; font-size: 1.05em; }
+
+        /* HOW IT WORKS */
+        .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 25px; max-width: 900px; margin: 0 auto; }
+        .step-card { background: white; border-radius: 16px; padding: 25px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .step-icon { font-size: 2.5em; margin-bottom: 15px; }
+        .step-card h3 { font-size: 1em; font-weight: 700; margin-bottom: 8px; color: #1a73e8; }
+        .step-card p { font-size: 0.9em; color: #666; line-height: 1.5; }
+
+        /* FEATURES */
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; max-width: 900px; margin: 0 auto; }
+        .feature { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .feature-icon { font-size: 2em; margin-bottom: 12px; }
+        .feature h3 { font-weight: 700; margin-bottom: 8px; }
+        .feature p { color: #666; font-size: 0.9em; line-height: 1.5; }
+
+        /* PHONE DEMO */
+        .demo { background: white; border-radius: 16px; padding: 20px; max-width: 280px; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .demo-header { background: #1a73e8; color: white; border-radius: 10px; padding: 10px 15px; margin-bottom: 15px; font-size: 0.85em; font-weight: 600; }
+        .msg { margin-bottom: 10px; }
+        .msg-out { text-align: right; }
+        .msg-in { text-align: left; }
+        .bubble { display: inline-block; padding: 8px 14px; border-radius: 18px; font-size: 0.9em; max-width: 85%; line-height: 1.4; }
+        .bubble-out { background: #1a73e8; color: white; border-radius: 18px 18px 4px 18px; }
+        .bubble-in { background: #f0f0f0; color: #333; border-radius: 18px 18px 18px 4px; }
+
+        /* SETUP FORM */
         .card { background: white; border-radius: 16px; padding: 30px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
         .card h2 { font-size: 1.3em; margin-bottom: 20px; color: #1a73e8; }
-        .step { display: flex; align-items: center; margin-bottom: 15px; }
+        .step-row { display: flex; align-items: center; margin-bottom: 15px; }
         .step-num { background: #1a73e8; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 12px; flex-shrink: 0; }
         input { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1em; margin-bottom: 12px; transition: border-color 0.2s; }
         input:focus { outline: none; border-color: #1a73e8; }
@@ -39,23 +95,299 @@
         .success h3 { color: #2e7d32; font-size: 1.3em; margin-bottom: 10px; }
         .success p { color: #388e3c; }
         .phone-preview { background: #f5f5f5; border-radius: 10px; padding: 15px; font-family: monospace; font-size: 0.9em; margin-top: 15px; }
-        .phone-preview div { margin-bottom: 5px; }
         .tag { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 3px 10px; border-radius: 20px; font-size: 0.85em; margin: 3px; }
         .error { color: #e53935; font-size: 0.9em; margin-bottom: 10px; }
-        .loading { text-align: center; color: #666; padding: 20px; }
+        .show-more-btn { background: white; color: #1a73e8; border: 2px solid #1a73e8; margin-top: 10px; }
+        .show-more-btn:hover { background: #e8f0fe; }
+        .show-less-btn { background: white; color: #666; border: 2px solid #ccc; margin-top: 10px; }
+        .show-less-btn:hover { background: #f5f5f5; }
+
+        /* CONTACT */
+        .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; max-width: 700px; margin: 0 auto; }
+        .contact-card { background: white; border-radius: 16px; padding: 30px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .contact-card .icon { font-size: 2.5em; margin-bottom: 15px; }
+        .contact-card h3 { font-weight: 700; margin-bottom: 8px; }
+        .contact-card p { color: #666; font-size: 0.9em; line-height: 1.5; }
+        .contact-card a { color: #1a73e8; text-decoration: none; font-weight: 600; }
+
+        /* FOOTER */
+        .footer { background: #1a1a2e; color: #aaa; text-align: center; padding: 30px 20px; font-size: 0.9em; }
+        .footer-logo { color: white; font-size: 1.2em; font-weight: 800; margin-bottom: 10px; }
+        .footer a { color: #aaa; text-decoration: none; margin: 0 10px; }
+        .footer a:hover { color: white; }
+
+        /* COMING SOON BADGE */
+        .badge { display: inline-block; background: #fff3e0; color: #f57c00; padding: 3px 10px; border-radius: 20px; font-size: 0.8em; font-weight: 600; margin-left: 8px; vertical-align: middle; }
+
         #map { width: 100%; height: 100%; }
+
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 2em; }
+            .nav-links { display: none; }
+            .stats-inner { gap: 30px; }
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🚌 TextMyRide</h1>
-        <p>Live bus times by SMS — no smartphone needed</p>
-    </div>
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        function App() {
+        function Nav({ page, setPage }) {
+            return (
+                <nav className="nav">
+                    <div className="nav-inner">
+                        <div className="nav-logo" onClick={() => setPage('home')}>
+                            🚌 TextMyRide
+                        </div>
+                        <div className="nav-links">
+                            <button className={'nav-link' + (page === 'home' ? ' active' : '')} onClick={() => setPage('home')}>Home</button>
+                            <button className={'nav-link' + (page === 'how' ? ' active' : '')} onClick={() => setPage('how')}>How it works</button>
+                            <button className={'nav-link' + (page === 'contact' ? ' active' : '')} onClick={() => setPage('contact')}>Contact</button>
+                        </div>
+                        <button className="nav-cta" onClick={() => setPage('setup')}>Get Started →</button>
+                    </div>
+                </nav>
+            );
+        }
+
+        function HomePage({ setPage }) {
+            return (
+                <div>
+                    <div className="hero">
+                        <h1>Live Bus & Train Times<br/>by SMS 📱</h1>
+                        <p>No smartphone needed. Your child texts a stop name and gets live times back instantly.</p>
+                        <div className="hero-btns">
+                            <button className="btn-primary" onClick={() => setPage('setup')}>Set Up Your Stops →</button>
+                            <button className="btn-secondary" onClick={() => setPage('how')}>How It Works</button>
+                        </div>
+                    </div>
+
+                    <div className="stats">
+                        <div className="stats-inner">
+                            <div className="stat">
+                                <div className="stat-num">📱</div>
+                                <div className="stat-label">Works on any phone</div>
+                            </div>
+                            <div className="stat">
+                                <div className="stat-num">🚌</div>
+                                <div className="stat-label">Live bus times</div>
+                            </div>
+                            <div className="stat">
+                                <div className="stat-num">🚂</div>
+                                <div className="stat-label">Train times coming soon</div>
+                            </div>
+                            <div className="stat">
+                                <div className="stat-num">⚡</div>
+                                <div className="stat-label">Instant reply</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="section" style={{background: '#f0f4f8'}}>
+                        <div className="container">
+                            <div className="section-title">Simple for your child 💬</div>
+                            <div className="section-sub">No app to download. No smartphone needed. Just text.</div>
+                            <div className="demo">
+                                <div className="demo-header">💬 Messages · TextMyRide</div>
+                                <div className="msg msg-out"><span className="bubble bubble-out">HOME</span></div>
+                                <div className="msg msg-in"><span className="bubble bubble-in">🚌 Bus 463: 3 mins<br/>Bus 463: 11 mins<br/>Bus 463: 24 mins</span></div>
+                                <div className="msg msg-out"><span className="bubble bubble-out">SCHOOL</span></div>
+                                <div className="msg msg-in"><span className="bubble bubble-in">🚌 Bus 154: 2 mins<br/>Bus 157: 8 mins<br/>Bus 154: 14 mins</span></div>
+                                <div className="msg msg-out"><span className="bubble bubble-out">HELP</span></div>
+                                <div className="msg msg-in"><span className="bubble bubble-in">Your stops:<br/>HOME, SCHOOL<br/>Text any stop for live times!</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="section">
+                        <div className="container">
+                            <div className="section-title">Why TextMyRide? 🌟</div>
+                            <div className="section-sub">Built for families with children on basic phones</div>
+                            <div className="features">
+                                <div className="feature">
+                                    <div className="feature-icon">📵</div>
+                                    <h3>No smartphone needed</h3>
+                                    <p>Works on any basic phone that can send and receive texts. Perfect for school-age children.</p>
+                                </div>
+                                <div className="feature">
+                                    <div className="feature-icon">🎯</div>
+                                    <h3>Personalised stops</h3>
+                                    <p>Set up friendly names like HOME and SCHOOL. Your child never needs to know a stop code.</p>
+                                </div>
+                                <div className="feature">
+                                    <div className="feature-icon">⚡</div>
+                                    <h3>Live times</h3>
+                                    <p>Real-time data direct from TfL. Always accurate, always up to date.</p>
+                                </div>
+                                <div className="feature">
+                                    <div className="feature-icon">🚂</div>
+                                    <h3>Trains coming soon</h3>
+                                    <p>National Rail and London Overground times will be added soon — same simple SMS experience.</p>
+                                </div>
+                                <div className="feature">
+                                    <div className="feature-icon">🔒</div>
+                                    <h3>Safe & private</h3>
+                                    <p>No account needed for your child. No app. No data stored on their phone.</p>
+                                </div>
+                                <div className="feature">
+                                    <div className="feature-icon">💰</div>
+                                    <h3>Affordable</h3>
+                                    <p>Simple monthly subscription for the whole family. Less than a coffee per month.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="section" style={{background: '#1a73e8', color: 'white', textAlign: 'center'}}>
+                        <div className="section-title" style={{color: 'white'}}>Ready to get started? 🚀</div>
+                        <p style={{color: 'rgba(255,255,255,0.9)', marginBottom: '25px', fontSize: '1.05em'}}>Set up your child's stops in under 2 minutes</p>
+                        <button className="btn-primary" onClick={() => setPage('setup')} style={{width: 'auto', padding: '14px 35px', fontSize: '1.1em'}}>
+                            Set Up Now — It's Free →
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        function HowItWorksPage({ setPage }) {
+            return (
+                <div>
+                    <div className="hero" style={{padding: '50px 20px'}}>
+                        <h1 style={{fontSize: '2.2em'}}>How It Works</h1>
+                        <p>Set up once, use forever. Takes less than 2 minutes.</p>
+                    </div>
+                    <div className="section">
+                        <div className="container">
+                            <div className="section-title">For parents — set up once 👨‍👩‍👧</div>
+                            <div className="section-sub">Visit this website, enter your child's stops, done!</div>
+                            <div className="steps">
+                                <div className="step-card">
+                                    <div className="step-icon">📍</div>
+                                    <h3>1. Enter your postcode</h3>
+                                    <p>We find all nearby bus stops automatically using your home or school postcode.</p>
+                                </div>
+                                <div className="step-card">
+                                    <div className="step-icon">🗺️</div>
+                                    <h3>2. Pick your stops</h3>
+                                    <p>See stops on a map. Pick the ones your child uses and give them friendly names.</p>
+                                </div>
+                                <div className="step-card">
+                                    <div className="step-icon">🏷️</div>
+                                    <h3>3. Name them</h3>
+                                    <p>Call them HOME, SCHOOL, GRAN — whatever makes sense to your child.</p>
+                                </div>
+                                <div className="step-card">
+                                    <div className="step-icon">✅</div>
+                                    <h3>4. Done!</h3>
+                                    <p>Your child gets a welcome text and can start using it straight away.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="section" style={{background: '#f0f4f8'}}>
+                        <div className="container">
+                            <div className="section-title">For your child — just text! 📱</div>
+                            <div className="section-sub">As simple as sending a text message</div>
+                            <div className="steps">
+                                <div className="step-card">
+                                    <div className="step-icon">✍️</div>
+                                    <h3>Text a stop name</h3>
+                                    <p>Just text HOME or SCHOOL to the TextMyRide number.</p>
+                                </div>
+                                <div className="step-card">
+                                    <div className="step-icon">⚡</div>
+                                    <h3>Get instant reply</h3>
+                                    <p>Within seconds, get the next buses at that stop with minutes until arrival.</p>
+                                </div>
+                                <div className="step-card">
+                                    <div className="step-icon">🚌</div>
+                                    <h3>Catch the right bus</h3>
+                                    <p>No more waiting at the wrong stop or missing the bus!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="section">
+                        <div className="container">
+                            <div className="section-title">Useful commands 💬</div>
+                            <div className="section-sub">Your child can text these anytime</div>
+                            <div style={{maxWidth: '500px', margin: '0 auto'}}>
+                                {[
+                                    { cmd: 'HOME', desc: 'Get live bus times at your home stop' },
+                                    { cmd: 'SCHOOL', desc: 'Get live bus times at your school stop' },
+                                    { cmd: 'HELP', desc: 'See all your saved stop names' },
+                                    { cmd: 'CHESS [name]', desc: 'Look up an ECF chess rating (bonus feature!)' },
+                                ].map(item => (
+                                    <div key={item.cmd} style={{display: 'flex', alignItems: 'center', background: 'white', borderRadius: '10px', padding: '15px', marginBottom: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)'}}>
+                                        <span className="tag" style={{minWidth: '80px', textAlign: 'center', marginRight: '15px', fontSize: '0.95em'}}>{item.cmd}</span>
+                                        <span style={{color: '#555'}}>{item.desc}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="section" style={{background: '#1a73e8', color: 'white', textAlign: 'center'}}>
+                        <div className="section-title" style={{color: 'white'}}>Ready to set up? 🚀</div>
+                        <p style={{color: 'rgba(255,255,255,0.9)', marginBottom: '25px'}}>Takes less than 2 minutes</p>
+                        <button className="btn-primary" onClick={() => setPage('setup')} style={{width: 'auto', padding: '14px 35px', fontSize: '1.1em'}}>
+                            Set Up Your Stops →
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        function ContactPage() {
+            return (
+                <div>
+                    <div className="hero" style={{padding: '50px 20px'}}>
+                        <h1 style={{fontSize: '2.2em'}}>Contact Us</h1>
+                        <p>We'd love to hear from you — parents, schools, or anyone with feedback!</p>
+                    </div>
+                    <div className="section">
+                        <div className="contact-grid">
+                            <div className="contact-card">
+                                <div className="icon">✉️</div>
+                                <h3>Email Us</h3>
+                                <p>For general enquiries, feedback or support</p>
+                                <br/>
+                                <a href="mailto:hello@textmyride.co.uk">hello@textmyride.co.uk</a>
+                            </div>
+                            <div className="contact-card">
+                                <div className="icon">🏫</div>
+                                <h3>Schools</h3>
+                                <p>Interested in a school-wide subscription? We'd love to talk!</p>
+                                <br/>
+                                <a href="mailto:schools@textmyride.co.uk">schools@textmyride.co.uk</a>
+                            </div>
+                            <div className="contact-card">
+                                <div className="icon">🚌</div>
+                                <h3>TextMyRide Number</h3>
+                                <p>This is the number your child texts for bus times</p>
+                                <br/>
+                                <span style={{color: '#1a73e8', fontWeight: '600'}}>See welcome text for number</span>
+                            </div>
+                        </div>
+                        <div style={{maxWidth: '600px', margin: '40px auto 0', background: 'white', borderRadius: '16px', padding: '30px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)'}}>
+                            <h3 style={{marginBottom: '15px', fontSize: '1.2em'}}>About TextMyRide</h3>
+                            <p style={{color: '#555', lineHeight: '1.7'}}>
+                                TextMyRide was built by a parent who wanted a simple way for their child to get live bus times without needing a smartphone. 
+                                We believe every child should be able to get around safely and independently, regardless of what phone they have.
+                            </p>
+                            <p style={{color: '#555', lineHeight: '1.7', marginTop: '12px'}}>
+                                We're a small team based in London, passionate about making public transport more accessible for young people and families.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function SetupPage() {
             const [step, setStep] = useState(1);
             const [phone, setPhone] = useState('');
             const [postcode, setPostcode] = useState('');
@@ -63,11 +395,10 @@
             const [selectedStop, setSelectedStop] = useState(null);
             const [keyword, setKeyword] = useState('');
             const [savedStops, setSavedStops] = useState([]);
-            const [radius, setRadius] = useState(400);
-            const [showingMore, setShowingMore] = useState(false);
             const [error, setError] = useState('');
             const [loading, setLoading] = useState(false);
             const [mapCenter, setMapCenter] = useState(null);
+            const [showingMore, setShowingMore] = useState(false);
             const mapRef = useRef(null);
             const googleMapRef = useRef(null);
             const markersRef = useRef([]);
@@ -109,14 +440,14 @@
                 });
             }
 
-            async function findStops(searchRadius = 400) {
+            async function findStops(radius = 400) {
                 setError('');
                 setLoading(true);
                 try {
                     const res = await fetch('/api/find-stops', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ postcode, radius: searchRadius })
+                        body: JSON.stringify({ postcode, radius })
                     });
                     const data = await res.json();
                     if (data.error) {
@@ -133,7 +464,7 @@
             }
 
             function addStop() {
-                if (selectedStop === null) { setError('Please select a stop'); return; }
+                if (selectedStop === null) { setError('Please select a stop first'); return; }
                 if (!keyword.trim()) { setError('Please enter a name like HOME or SCHOOL'); return; }
                 const kw = keyword.trim().toUpperCase();
                 if (savedStops.find(s => s.keyword === kw)) { setError('You already have a stop called ' + kw); return; }
@@ -171,163 +502,136 @@
             }
 
             return (
-                <div className="container">
-                    {step === 1 && (
-                        <div className="card">
-                            <h2>📱 Set up your child's stops</h2>
-                            <div className="step">
-                                <div className="step-num">1</div>
-                                <span>Enter your child's phone number</span>
-                            </div>
-                            <input
-                                type="tel"
-                                placeholder="e.g. 07700123456"
-                                value={phone}
-                                onChange={e => setPhone(e.target.value)}
-                            />
-                            <div className="step">
-                                <div className="step-num">2</div>
-                                <span>Enter your home postcode</span>
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="e.g. SW12 9RQ"
-                                value={postcode}
-                                onChange={e => setPostcode(e.target.value.toUpperCase())}
-                            />
-                            {error && <div className="error">{error}</div>}
-                            <button onClick={() => { setRadius(400); setShowingMore(false); findStops(); }} disabled={loading || !phone || !postcode}>
-                                {loading ? 'Finding stops...' : 'Find Nearby Stops →'}
-                            </button>
-                            <div className="phone-preview" style={{marginTop: '20px'}}>
-                                <div>💬 How it works:</div>
-                                <div style={{marginTop:'8px'}}>Child texts: <strong>HOME</strong></div>
-                                <div>Gets back: <strong>Bus 463: 4 mins</strong></div>
-                                <div style={{marginTop:'4px'}}>Child texts: <strong>SCHOOL</strong></div>
-                                <div>Gets back: <strong>Bus 154: 2 mins</strong></div>
-                            </div>
-                        </div>
-                    )}
-                    {step === 2 && (
-                        <div>
+                <div>
+                    <div className="hero" style={{padding: '40px 20px'}}>
+                        <h1 style={{fontSize: '2em'}}>Set Up Your Stops</h1>
+                        <p style={{fontSize: '1em'}}>Takes less than 2 minutes</p>
+                    </div>
+                    <div style={{maxWidth: '600px', margin: '30px auto', padding: '0 20px'}}>
+                        {step === 1 && (
                             <div className="card">
-                                <h2>📍 Stops near {postcode}</h2>
-                                <div className="map-container">
-                                    <div id="map" ref={mapRef}></div>
+                                <h2>📱 Your child's details</h2>
+                                <div className="step-row">
+                                    <div className="step-num">1</div>
+                                    <span>Enter your child's phone number</span>
                                 </div>
-                                {nearbyStops.map((stop, i) => (
-                                    <div
-                                        key={i}
-                                        className={'stop-card' + (selectedStop === i ? ' selected' : '')}
-                                        onClick={() => setSelectedStop(i)}
-                                    >
-                                        <div className="stop-name">
-                                            {i + 1}. {stop.name}
-                                            {selectedStop === i && ' ✓'}
-                                        </div>
-                                        <div className="stop-buses">
-                                            Buses: {stop.buses.slice(0,6).map(b => (
-                                                <span key={b} className="tag">{b}</span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                 {!showingMore && (
-                    <button
-                        onClick={() => {
-                            setShowingMore(true);
-                            setRadius(800);
-                            findStops(800);
-                        }}
-                        style={{
-                            background: 'white',
-                            color: '#1a73e8',
-                            border: '2px solid #1a73e8',
-                            marginTop: '10px'
-                        }}
-                    >
-                        🔍 Show more stops (further away)
-                    </button>
-                )}
-                {showingMore && (
-                    <button
-                        onClick={() => {
-                            setShowingMore(false);
-                            setRadius(400);
-                            findStops(400);
-                        }}
-                        style={{
-                            background: 'white',
-                            color: '#666',
-                            border: '2px solid #ccc',
-                            marginTop: '10px'
-                        }}
-                    >
-                        Show fewer stops
-                    </button>
-                )}                               
-                            </div>
-                            <div className="card">
-                                <h2>🏷️ Name this stop</h2>
-                                <p style={{marginBottom:'12px', color:'#666'}}>
-                                    Select a stop above then give it a name your child will text
-                                </p>
-                                <div className="keyword-row">
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. HOME or SCHOOL"
-                                        value={keyword}
-                                        onChange={e => setKeyword(e.target.value.toUpperCase())}
-                                        maxLength={10}
-                                    />
-                                    <button onClick={addStop} style={{width:'auto', padding:'14px 20px'}}>
-                                        Add
-                                    </button>
+                                <input type="tel" placeholder="e.g. 07700123456" value={phone} onChange={e => setPhone(e.target.value)} />
+                                <div className="step-row">
+                                    <div className="step-num">2</div>
+                                    <span>Enter your home postcode</span>
                                 </div>
+                                <input type="text" placeholder="e.g. SW12 9RQ" value={postcode} onChange={e => setPostcode(e.target.value.toUpperCase())} />
                                 {error && <div className="error">{error}</div>}
-                                {savedStops.length > 0 && (
-                                    <div>
-                                        <p style={{marginBottom:'10px', fontWeight:'600'}}>Saved stops:</p>
-                                        {savedStops.map(s => (
-                                            <div key={s.keyword} className="saved-stop">
-                                                <div>
-                                                    <div className="saved-stop-name">{s.keyword}</div>
-                                                    <div className="saved-stop-detail">{s.name}</div>
-                                                </div>
-                                                <button className="remove-btn" onClick={() => removeStop(s.keyword)}>✕</button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="card">
-                                <h2>✅ All done?</h2>
-                                <p style={{marginBottom:'15px', color:'#666'}}>
-                                    Add as many stops as you need, then click finish.
-                                </p>
-                                {error && <div className="error">{error}</div>}
-                                <button onClick={saveAndFinish} disabled={loading || savedStops.length === 0}>
-                                    {loading ? 'Saving...' : 'Save & Finish 🎉'}
+                                <button onClick={() => findStops(400)} disabled={loading || !phone || !postcode}>
+                                    {loading ? 'Finding stops...' : 'Find Nearby Stops →'}
                                 </button>
                             </div>
-                        </div>
-                    )}
-                    {step === 3 && (
-                        <div className="card">
-                            <div className="success">
-                                <h3>🎉 All set up!</h3>
-                                <p>Your child's stops have been saved.</p>
-                                <p style={{marginTop:'10px'}}>They can start texting right away!</p>
+                        )}
+
+                        {step === 2 && (
+                            <div>
+                                <div className="card">
+                                    <h2>📍 Stops near {postcode}</h2>
+                                    <div className="map-container">
+                                        <div id="map" ref={mapRef}></div>
+                                    </div>
+                                    {nearbyStops.map((stop, i) => (
+                                        <div key={i} className={'stop-card' + (selectedStop === i ? ' selected' : '')} onClick={() => setSelectedStop(i)}>
+                                            <div className="stop-name">{i + 1}. {stop.name}{selectedStop === i && ' ✓'}</div>
+                                            <div className="stop-buses">Buses: {stop.buses.slice(0,6).map(b => (<span key={b} className="tag">{b}</span>))}</div>
+                                        </div>
+                                    ))}
+                                    {!showingMore ? (
+                                        <button className="show-more-btn" onClick={() => { setShowingMore(true); findStops(800); }}>
+                                            🔍 Show more stops (further away)
+                                        </button>
+                                    ) : (
+                                        <button className="show-less-btn" onClick={() => { setShowingMore(false); findStops(400); }}>
+                                            Show fewer stops
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="card">
+                                    <h2>🏷️ Name this stop</h2>
+                                    <p style={{marginBottom: '12px', color: '#666'}}>Select a stop above then give it a name your child will text</p>
+                                    <div className="keyword-row">
+                                        <input type="text" placeholder="e.g. HOME or SCHOOL" value={keyword} onChange={e => setKeyword(e.target.value.toUpperCase())} maxLength={10} />
+                                        <button onClick={addStop} style={{width: 'auto', padding: '14px 20px'}}>Add</button>
+                                    </div>
+                                    {error && <div className="error">{error}</div>}
+                                    {savedStops.length > 0 && (
+                                        <div>
+                                            <p style={{marginBottom: '10px', fontWeight: '600'}}>Saved stops:</p>
+                                            {savedStops.map(s => (
+                                                <div key={s.keyword} className="saved-stop">
+                                                    <div>
+                                                        <div className="saved-stop-name">{s.keyword}</div>
+                                                        <div className="saved-stop-detail">{s.name}</div>
+                                                    </div>
+                                                    <button className="remove-btn" onClick={() => removeStop(s.keyword)}>✕</button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="card">
+                                    <h2>✅ All done?</h2>
+                                    <p style={{marginBottom: '15px', color: '#666'}}>Add as many stops as you need, then click finish.</p>
+                                    {error && <div className="error">{error}</div>}
+                                    <button onClick={saveAndFinish} disabled={loading || savedStops.length === 0}>
+                                        {loading ? 'Saving...' : 'Save & Finish 🎉'}
+                                    </button>
+                                </div>
                             </div>
-                            <div className="phone-preview" style={{marginTop:'20px'}}>
-                                <div style={{fontWeight:'600', marginBottom:'8px'}}>📱 Tell your child:</div>
-                                {savedStops.map(s => (
-                                    <div key={s.keyword}>Text <strong>{s.keyword}</strong> for buses from {s.name}</div>
-                                ))}
-                                <div style={{marginTop:'8px'}}>Text <strong>HELP</strong> to see all stops</div>
+                        )}
+
+                        {step === 3 && (
+                            <div className="card">
+                                <div className="success">
+                                    <h3>🎉 All set up!</h3>
+                                    <p>Your child's stops have been saved.</p>
+                                    <p style={{marginTop: '10px'}}>They'll receive a welcome text shortly!</p>
+                                </div>
+                                <div className="phone-preview" style={{marginTop: '20px'}}>
+                                    <div style={{fontWeight: '600', marginBottom: '8px'}}>📱 Tell your child:</div>
+                                    {savedStops.map(s => (
+                                        <div key={s.keyword}>Text <strong>{s.keyword}</strong> for buses from {s.name}</div>
+                                    ))}
+                                    <div style={{marginTop: '8px'}}>Text <strong>HELP</strong> to see all stops</div>
+                                </div>
                             </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function App() {
+            const [page, setPage] = useState('home');
+
+            useEffect(() => {
+                window.scrollTo(0, 0);
+            }, [page]);
+
+            return (
+                <div>
+                    <Nav page={page} setPage={setPage} />
+                    {page === 'home' && <HomePage setPage={setPage} />}
+                    {page === 'how' && <HowItWorksPage setPage={setPage} />}
+                    {page === 'contact' && <ContactPage />}
+                    {page === 'setup' && <SetupPage />}
+                    <footer className="footer">
+                        <div className="footer-logo">🚌 TextMyRide</div>
+                        <p style={{marginBottom: '10px'}}>Live bus & train times by SMS</p>
+                        <div>
+                            <a onClick={() => {}} href="#">Privacy</a>
+                            <a onClick={() => {}} href="#">Terms</a>
+                            <a href="mailto:hello@textmyride.co.uk">Contact</a>
                         </div>
-                    )}
+                        <p style={{marginTop: '15px', fontSize: '0.8em'}}>© 2026 TextMyRide. All rights reserved.</p>
+                    </footer>
                 </div>
             );
         }
@@ -336,8 +640,6 @@
     </script>
     <script>
         window.GOOGLE_MAPS_API_KEY = '%%GOOGLE_MAPS_API_KEY%%';
-    </script>
-    <script>
         function loadGoogleMaps() {
             const script = document.createElement('script');
             script.src = 'https://maps.googleapis.com/maps/api/js?key=' + window.GOOGLE_MAPS_API_KEY + '&libraries=places';
