@@ -574,7 +574,7 @@
                                 <h2>🚌 What would you like to add?</h2>
                                 <div className="type-toggle">
                                     <button className={'type-btn' + (stopType === 'bus' ? ' active' : '')} onClick={() => { setStopType('bus'); setSelectedStation(null); setStationResults([]); setDestinations([]); setSelectedDests([]); }}>🚌 Bus Stop</button>
-                                    <button className={'type-btn' + (stopType === 'train' ? ' active' : '')} onClick={() => { setStopType('train'); setSelectedStop(null); setSelectedBuses([]); }}>🚂 Train Station</button>
+                                    <button className='type-btn' disabled={true} title="Coming soon!" style={{opacity:0.45, cursor:'not-allowed'}}>🚂 Train Station (coming soon)</button>
                                 </div>
                                 {stopType === 'bus' && (
                                     <>
