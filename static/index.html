@@ -63,6 +63,8 @@
             const [selectedStop, setSelectedStop] = useState(null);
             const [keyword, setKeyword] = useState('');
             const [savedStops, setSavedStops] = useState([]);
+            const [radius, setRadius] = useState(400);
+            const [showingMore, setShowingMore] = useState(false);
             const [error, setError] = useState('');
             const [loading, setLoading] = useState(false);
             const [mapCenter, setMapCenter] = useState(null);
@@ -107,14 +109,14 @@
                 });
             }
 
-            async function findStops() {
+            async function findStops(searchRadius = 400) {
                 setError('');
                 setLoading(true);
                 try {
                     const res = await fetch('/api/find-stops', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ postcode })
+                        body: JSON.stringify({ postcode, radius: searchRadius })
                     });
                     const data = await res.json();
                     if (data.error) {
@@ -194,7 +196,7 @@
                                 onChange={e => setPostcode(e.target.value.toUpperCase())}
                             />
                             {error && <div className="error">{error}</div>}
-                            <button onClick={findStops} disabled={loading || !phone || !postcode}>
+                            <button onClick={() => { setRadius(400); setShowingMore(false); findStops(); }} disabled={loading || !phone || !postcode}>
                                 {loading ? 'Finding stops...' : 'Find Nearby Stops →'}
                             </button>
                             <div className="phone-preview" style={{marginTop: '20px'}}>
@@ -230,6 +232,40 @@
                                         </div>
                                     </div>
                                 ))}
+                 {!showingMore && (
+                    <button
+                        onClick={() => {
+                            setShowingMore(true);
+                            setRadius(800);
+                            findStops(800);
+                        }}
+                        style={{
+                            background: 'white',
+                            color: '#1a73e8',
+                            border: '2px solid #1a73e8',
+                            marginTop: '10px'
+                        }}
+                    >
+                        🔍 Show more stops (further away)
+                    </button>
+                )}
+                {showingMore && (
+                    <button
+                        onClick={() => {
+                            setShowingMore(false);
+                            setRadius(400);
+                            findStops(400);
+                        }}
+                        style={{
+                            background: 'white',
+                            color: '#666',
+                            border: '2px solid #ccc',
+                            marginTop: '10px'
+                        }}
+                    >
+                        Show fewer stops
+                    </button>
+                )}                               
                             </div>
                             <div className="card">
                                 <h2>🏷️ Name this stop</h2>
