@@ -450,6 +450,7 @@
                                 <h2>📱 Your child's details</h2>
                                 <div className="step-row"><div className="step-num">1</div><span>Enter your child's phone number</span></div>
                                 <input type="tel" placeholder="e.g. 07700123456" value={phone} onChange={e => setPhone(e.target.value)} />
+                                <p style={{fontSize: '0.85em', color: '#666', marginBottom: '12px'}}>Enter your child's UK mobile number</p>
                                 <div className="step-row"><div className="step-num">2</div><span>What would you like to add?</span></div>
                                 <div className="type-toggle">
                                     <button className={'type-btn' + (stopType === 'bus' ? ' active' : '')} onClick={() => { setStopType('bus'); setKeyword(''); setSelectedStation(null); setStationResults([]); setDestinations([]); setSelectedDests([]); }}>🚌 Bus Stop</button>
