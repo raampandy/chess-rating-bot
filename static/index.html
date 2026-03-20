@@ -107,6 +107,14 @@
         .footer-logo { color: white; font-size: 1.2em; font-weight: 800; margin-bottom: 10px; }
         .footer a { color: #aaa; text-decoration: none; margin: 0 10px; }
         .footer a:hover { color: white; }
+        .plan-card { border: 2px solid #e0e0e0; border-radius: 12px; padding: 20px; margin-bottom: 15px; }
+        .plan-card.featured { border-color: #1a73e8; background: #f8f9ff; }
+        .plan-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .plan-name { font-weight: 700; font-size: 1.1em; }
+        .plan-price { font-weight: 800; font-size: 1.2em; color: #1a73e8; }
+        .plan-features { color: #666; font-size: 0.9em; margin-bottom: 15px; line-height: 1.8; }
+        .btn-outline { background: white; color: #1a73e8; border: 2px solid #1a73e8; }
+        .btn-outline:hover { background: #e8f0fe; }
         #map { width: 100%; height: 100%; }
         @media (max-width: 600px) { .hero h1 { font-size: 2em; } .nav-links { display: none; } .stats-inner { gap: 30px; } }
     </style>
@@ -419,20 +427,39 @@
                 setSavedStops(savedStops.filter(s => s.keyword !== kw));
             }
 
-            async function saveAndFinish() {
+            function saveAndFinish() {
                 if (!phone.trim()) { setError('Please enter a phone number'); return; }
                 if (savedStops.length === 0) { setError('Please add at least one stop'); return; }
+                setError('');
+                setFormStep(3);
+            }
+
+            async function completePurchase(plan) {
                 setLoading(true);
                 setError('');
                 try {
                     const res = await fetch('/api/register', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ phone, stops: savedStops })
+                        body: JSON.stringify({ phone, stops: savedStops, plan })
                     });
                     const data = await res.json();
-                    if (data.error) { setError(data.error); }
-                    else { setFormStep(3); }
+                    if (data.error) { setError(data.error); setLoading(false); return; }
+                    if (data.requires_payment) {
+                        const checkoutRes = await fetch('/api/create-checkout', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ phone, plan })
+                        });
+                        const checkoutData = await checkoutRes.json();
+                        if (checkoutData.checkout_url) {
+                            window.location.href = checkoutData.checkout_url;
+                        } else {
+                            setError('Could not start checkout. Please try again.');
+                        }
+                    } else {
+                        setFormStep(4);
+                    }
                 } catch (e) { setError('Something went wrong. Please try again.'); }
                 setLoading(false);
             }
@@ -592,6 +619,59 @@
 
                         {formStep === 3 && (
                             <div className="card">
+                                <h2>💳 Choose your plan</h2>
+                                <p style={{color: '#666', marginBottom: '20px'}}>Your stops are ready — pick a plan to activate them.</p>
+                                {error && <div className="error">{error}</div>}
+
+                                <div className="plan-card">
+                                    <div className="plan-header">
+                                        <div className="plan-name">Free</div>
+                                        <div className="plan-price">£0/month</div>
+                                    </div>
+                                    <div className="plan-features">
+                                        ✓ 1 phone number<br/>
+                                        ✓ Unlimited texts<br/>
+                                        ✓ Bus &amp; train times
+                                    </div>
+                                    <button className="btn-outline" onClick={() => completePurchase('free')} disabled={loading}>
+                                        {loading ? 'Setting up...' : 'Continue Free →'}
+                                    </button>
+                                </div>
+
+                                <div className="plan-card featured">
+                                    <div className="plan-header">
+                                        <div className="plan-name">Basic ⭐</div>
+                                        <div className="plan-price">£2.99/month</div>
+                                    </div>
+                                    <div className="plan-features">
+                                        ✓ 1 phone number<br/>
+                                        ✓ Unlimited texts<br/>
+                                        ✓ Priority support
+                                    </div>
+                                    <button onClick={() => completePurchase('basic')} disabled={loading}>
+                                        {loading ? 'Setting up...' : 'Choose Basic →'}
+                                    </button>
+                                </div>
+
+                                <div className="plan-card">
+                                    <div className="plan-header">
+                                        <div className="plan-name">Family 👨‍👩‍👧</div>
+                                        <div className="plan-price">£4.99/month</div>
+                                    </div>
+                                    <div className="plan-features">
+                                        ✓ Up to 5 phone numbers<br/>
+                                        ✓ Unlimited texts<br/>
+                                        ✓ Priority support
+                                    </div>
+                                    <button className="btn-outline" onClick={() => completePurchase('family')} disabled={loading}>
+                                        {loading ? 'Setting up...' : 'Choose Family →'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {formStep === 4 && (
+                            <div className="card">
                                 <div className="success">
                                     <h3>🎉 All set up!</h3>
                                     <p>Your child's stops have been saved.</p>
@@ -606,6 +686,7 @@
                                 </div>
                             </div>
                         )}
+
                     </div>
                 </div>
             );
