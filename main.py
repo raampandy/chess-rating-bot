@@ -299,6 +299,7 @@ def api_register():
     elif phone_clean.startswith('447') and len(phone_clean) == 12:
         phone_clean = '+' + phone_clean
     register_user(phone_clean)
+    phone_clean = normalise_phone(phone_clean)
     for stop in stops:
         keyword = stop.get('keyword', '').upper()
         if stop.get('type') == 'train':
