@@ -452,8 +452,8 @@
                                 <input type="tel" placeholder="e.g. 07700123456" value={phone} onChange={e => setPhone(e.target.value)} />
                                 <div className="step-row"><div className="step-num">2</div><span>What would you like to add?</span></div>
                                 <div className="type-toggle">
-                                    <button className={'type-btn' + (stopType === 'bus' ? ' active' : '')} onClick={() => setStopType('bus')}>🚌 Bus Stop</button>
-                                    <button className={'type-btn' + (stopType === 'train' ? ' active' : '')} onClick={() => setStopType('train')}>🚂 Train Station</button>
+                                    <button className={'type-btn' + (stopType === 'bus' ? ' active' : '')} onClick={() => { setStopType('bus'); setKeyword(''); setSelectedStation(null); setStationResults([]); setDestinations([]); setSelectedDests([]); }}>🚌 Bus Stop</button>
+                                    <button className={'type-btn' + (stopType === 'train' ? ' active' : '')} onClick={() => { setStopType('train'); setKeyword(''); setSelectedStop(null); setSelectedBuses([]); }}>🚂 Train Station</button>
                                 </div>
                                 {stopType === 'bus' && (
                                     <>
