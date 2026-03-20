@@ -287,6 +287,11 @@ def api_register():
     phone_clean = re.sub(r'[^0-9+]', '', phone)
     if not phone_clean:
         return jsonify({'error': 'Invalid phone number'}), 400
+    # Convert UK 07... numbers to +447... format
+    if phone_clean.startswith('07') and len(phone_clean) == 11:
+        phone_clean = '+44' + phone_clean[1:]
+    elif phone_clean.startswith('447') and len(phone_clean) == 12:
+        phone_clean = '+' + phone_clean
     register_user(phone_clean)
     for stop in stops:
         keyword = stop.get('keyword', '').upper()
