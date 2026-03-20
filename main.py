@@ -562,22 +562,28 @@ def api_check_verification():
             to=phone, code=code
         )
         if result.status == 'approved':
-            register_user(phone)
-            conn = get_db()
-            cur = conn.cursor()
-            cur.execute('UPDATE users SET verified = TRUE WHERE phone_number = %s', (phone,))
-            conn.commit()
-            cur.close()
-            conn.close()
-            token = create_session(phone)
-            user = get_user(phone)
-            is_new = count_user_stops(phone) == 0
-            return jsonify({
-                'success': True,
-                'token': token,
-                'is_new_user': is_new,
-                'plan': user.get('plan', 'free') if user else 'free'
-            })
+                register_user(phone)
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute('UPDATE users SET verified = TRUE WHERE phone_number = %s', (phone,))
+                conn.commit()
+                cur.close()
+                conn.close()
+                token = create_session(phone)
+                user = get_user(phone)
+                is_new = count_user_stops(phone) == 0
+                if is_new:
+                    send_sms(phone,
+                        'Welcome to TextMyRide! 🚌\n'
+                        'Your account is set up.\n'
+                        'Visit textmyride.co.uk to add your bus stops.\n'
+                        'Text HELP anytime to see your stops.')
+                return jsonify({
+                    'success': True,
+                    'token': token,
+                    'is_new_user': is_new,
+                    'plan': user.get('plan', 'free') if user else 'free'
+                })
         else:
             return jsonify({'error': 'Incorrect code. Please try again.'}), 400
     except Exception as e:
