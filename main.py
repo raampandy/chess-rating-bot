@@ -136,14 +136,14 @@ def postcode_to_latlong(postcode):
     except:
         return None, None
 
-def find_nearby_stops(lat, lon):
+def find_nearby_stops(lat, lon, radius=400):
     try:
         url = (
             'https://api.tfl.gov.uk/StopPoint?'
             'stopTypes=NaptanPublicBusCoachTram'
             '&lat=' + str(lat) +
             '&lon=' + str(lon) +
-            '&radius=400'
+            '&radius=' + str(radius) +
             '&useStopPointHierarchy=false'
             '&modes=bus'
             '&returnLines=true'
@@ -152,7 +152,8 @@ def find_nearby_stops(lat, lon):
         data = r.json()
         stops = data.get('stopPoints', [])
         results = []
-        for s in stops[:6]:
+        limit = 6 if radius <= 400 else 12
+        for s in stops[:limit]:
             name = s.get('commonName', 'Unknown')
             stop_id = s.get('id', '')
             lat_s = s.get('lat', 0)
@@ -262,7 +263,8 @@ def api_find_stops():
     lat, lon = postcode_to_latlong(postcode)
     if not lat:
         return jsonify({'error': 'Could not find that postcode. Please try again.'}), 400
-    stops = find_nearby_stops(lat, lon)
+    radius = data.get('radius', 400)
+    stops = find_nearby_stops(lat, lon, radius)
     if not stops:
         return jsonify({'error': 'No bus stops found near ' + postcode + '. Try a nearby postcode.'}), 400
     return jsonify({'stops': stops, 'center': {'lat': lat, 'lon': lon}})
