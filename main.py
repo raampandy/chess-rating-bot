@@ -8,6 +8,7 @@ import logging
 import psycopg2
 import json
 import re
+import stripe
 from psycopg2.extras import RealDictCursor
 
 logging.basicConfig(level=logging.INFO)
@@ -16,6 +17,12 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+STRIPE_BASIC_PRICE_ID = os.environ.get('STRIPE_BASIC_PRICE_ID')
+STRIPE_FAMILY_PRICE_ID = os.environ.get('STRIPE_FAMILY_PRICE_ID')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
+APP_URL = os.environ.get('APP_URL', 'https://web-production-e62738.up.railway.app')
 
 def get_db():
     conn = psycopg2.connect(DATABASE_URL)
@@ -46,6 +53,13 @@ def init_db():
             stops_json TEXT,
             created_at TIMESTAMP DEFAULT NOW()
         )
+    ''')
+    # Add new columns if they don't exist yet
+    cur.execute('''
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'free'
+    ''')
+    cur.execute('''
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT
     ''')
     conn.commit()
     cur.close()
@@ -201,6 +215,43 @@ def register_user(phone_number):
     except Exception as e:
         logger.error('DB error: ' + str(e))
 
+def get_user_plan(phone_number):
+    phone_number = normalise_phone(phone_number)
+    try:
+        conn = get_db()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute('SELECT plan FROM users WHERE phone_number = %s', (phone_number,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if row:
+            return row['plan'] or 'free'
+        return 'free'
+    except Exception as e:
+        logger.error('DB error: ' + str(e))
+        return 'free'
+
+def set_user_plan(phone_number, plan, stripe_customer_id=None):
+    phone_number = normalise_phone(phone_number)
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        if stripe_customer_id:
+            cur.execute(
+                'UPDATE users SET plan = %s, stripe_customer_id = %s WHERE phone_number = %s',
+                (plan, stripe_customer_id, phone_number)
+            )
+        else:
+            cur.execute(
+                'UPDATE users SET plan = %s WHERE phone_number = %s',
+                (plan, phone_number)
+            )
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        logger.error('DB error: ' + str(e))
+
 def save_user_stop(phone_number, keyword, stop_configs):
     phone_number = normalise_phone(phone_number)
     try:
@@ -258,6 +309,26 @@ def get_user_keywords(phone_number):
         logger.error('DB error: ' + str(e))
         return []
 
+def count_registered_numbers(phone_number):
+    """Count how many phone numbers are linked to same Stripe customer."""
+    phone_number = normalise_phone(phone_number)
+    try:
+        conn = get_db()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute('SELECT stripe_customer_id FROM users WHERE phone_number = %s', (phone_number,))
+        row = cur.fetchone()
+        if not row or not row['stripe_customer_id']:
+            return 1
+        customer_id = row['stripe_customer_id']
+        cur.execute('SELECT COUNT(*) as cnt FROM users WHERE stripe_customer_id = %s', (customer_id,))
+        count_row = cur.fetchone()
+        cur.close()
+        conn.close()
+        return count_row['cnt'] if count_row else 1
+    except Exception as e:
+        logger.error('DB error: ' + str(e))
+        return 1
+
 @app.route('/')
 def index():
     api_key = os.environ.get('GOOGLE_MAPS_API_KEY', '')
@@ -286,6 +357,7 @@ def api_register():
     data = request.get_json()
     phone = data.get('phone', '').strip()
     stops = data.get('stops', [])
+    plan = data.get('plan', 'free')
     if not phone:
         return jsonify({'error': 'Please enter a phone number'}), 400
     if not stops:
@@ -293,7 +365,6 @@ def api_register():
     phone_clean = re.sub(r'[^0-9+]', '', phone)
     if not phone_clean:
         return jsonify({'error': 'Invalid phone number'}), 400
-    # Convert UK 07... numbers to +447... format
     if phone_clean.startswith('07') and len(phone_clean) == 11:
         phone_clean = '+44' + phone_clean[1:]
     elif phone_clean.startswith('447') and len(phone_clean) == 12:
@@ -307,6 +378,9 @@ def api_register():
         else:
             stop_config = [{'type': 'bus', 'stop': stop['stop'], 'buses': stop['buses']}]
         save_user_stop(phone_clean, keyword, stop_config)
+    # If paid plan selected, redirect to Stripe instead of completing here
+    if plan in ('basic', 'family'):
+        return jsonify({'success': True, 'requires_payment': True, 'phone': phone_clean, 'plan': plan})
     twilio_number = os.environ.get('TWILIO_NUMBER', '')
     account_sid = os.environ.get('TWILIO_ACCOUNT_SID', '')
     auth_token = os.environ.get('TWILIO_AUTH_TOKEN', '')
@@ -321,7 +395,115 @@ def api_register():
             client.messages.create(body=msg, from_=twilio_number, to=phone_clean)
         except Exception as e:
             logger.error('Twilio error: ' + str(e))
-    return jsonify({'success': True})
+    return jsonify({'success': True, 'requires_payment': False})
+
+@app.route('/api/create-checkout', methods=['POST'])
+def api_create_checkout():
+    data = request.get_json()
+    phone = data.get('phone', '').strip()
+    plan = data.get('plan', 'basic')
+    if not phone:
+        return jsonify({'error': 'Phone number required'}), 400
+    phone = normalise_phone(phone)
+    price_id = STRIPE_BASIC_PRICE_ID if plan == 'basic' else STRIPE_FAMILY_PRICE_ID
+    if not price_id:
+        return jsonify({'error': 'Stripe not configured'}), 500
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{'price': price_id, 'quantity': 1}],
+            mode='subscription',
+            success_url=APP_URL + '/success?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=APP_URL + '/?cancelled=true',
+            metadata={'phone_number': phone, 'plan': plan}
+        )
+        return jsonify({'checkout_url': session.url})
+    except Exception as e:
+        logger.error('Stripe error: ' + str(e))
+        return jsonify({'error': 'Could not create checkout session'}), 500
+
+@app.route('/api/stripe-webhook', methods=['POST'])
+def stripe_webhook():
+    payload = request.get_data()
+    sig_header = request.headers.get('Stripe-Signature')
+    if not STRIPE_WEBHOOK_SECRET:
+        return jsonify({'error': 'Webhook secret not configured'}), 500
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+    except stripe.error.SignatureVerificationError:
+        logger.error('Stripe webhook signature verification failed')
+        return jsonify({'error': 'Invalid signature'}), 400
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        phone = session.get('metadata', {}).get('phone_number')
+        plan = session.get('metadata', {}).get('plan', 'basic')
+        customer_id = session.get('customer')
+        if phone:
+            set_user_plan(phone, plan, customer_id)
+            logger.info('Upgraded ' + phone + ' to ' + plan)
+            twilio_number = os.environ.get('TWILIO_NUMBER', '')
+            account_sid = os.environ.get('TWILIO_ACCOUNT_SID', '')
+            auth_token = os.environ.get('TWILIO_AUTH_TOKEN', '')
+            if twilio_number and account_sid and auth_token:
+                try:
+                    from twilio.rest import Client
+                    client = Client(account_sid, auth_token)
+                    client.messages.create(
+                        body='TextMyRide: Payment confirmed! You are now on the ' + plan.capitalize() + ' plan. Text HELP to see your stops.',
+                        from_=twilio_number,
+                        to=phone
+                    )
+                except Exception as e:
+                    logger.error('Twilio error: ' + str(e))
+    elif event['type'] == 'customer.subscription.deleted':
+        customer_id = event['data']['object'].get('customer')
+        if customer_id:
+            try:
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute(
+                    'UPDATE users SET plan = %s WHERE stripe_customer_id = %s',
+                    ('free', customer_id)
+                )
+                conn.commit()
+                cur.close()
+                conn.close()
+                logger.info('Downgraded customer ' + customer_id + ' to free')
+            except Exception as e:
+                logger.error('DB error on subscription cancel: ' + str(e))
+    return jsonify({'status': 'ok'})
+
+@app.route('/api/user-plan', methods=['POST'])
+def api_user_plan():
+    data = request.get_json()
+    phone = data.get('phone', '').strip()
+    if not phone:
+        return jsonify({'error': 'Phone required'}), 400
+    phone = normalise_phone(phone)
+    plan = get_user_plan(phone)
+    return jsonify({'plan': plan})
+
+@app.route('/success')
+def success():
+    return '''<!DOCTYPE html>
+<html>
+<head><title>TextMyRide - Payment Successful</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: sans-serif; text-align: center; padding: 60px 20px; background: #f0fdf4; }
+  h1 { color: #16a34a; font-size: 2rem; }
+  p { color: #374151; font-size: 1.1rem; margin-top: 16px; }
+  a { display: inline-block; margin-top: 32px; padding: 12px 24px; background: #16a34a; color: white; border-radius: 8px; text-decoration: none; }
+</style>
+</head>
+<body>
+  <h1>Payment successful! 🎉</h1>
+  <p>Your TextMyRide subscription is now active.</p>
+  <p>You'll receive a confirmation text shortly.</p>
+  <a href="/">Back to home</a>
+</body>
+</html>'''
+
 def get_train_times(stop_config):
     crs = stop_config.get('crs', '')
     destinations = stop_config.get('destinations', [])
@@ -357,7 +539,7 @@ def get_train_times(stop_config):
         return chr(10).join(['Trains from ' + station_name + ':'] + results)
     except Exception as e:
         return 'Sorry, could not reach train data. Please try again shortly.'
-        
+
 @app.route('/sms', methods=['GET', 'POST'])
 def sms_reply():
     body = request.args.get('Body')
@@ -402,6 +584,7 @@ def sms_reply():
             message_text = 'Stop not found. Visit textmyride.co.uk to set up your stops or text HELP.'
     resp.message(message_text)
     return str(resp)
+
 @app.route('/api/find-stations', methods=['POST'])
 def api_find_stations():
     data = request.get_json()
@@ -436,7 +619,7 @@ def api_train_destinations():
         return jsonify({'destinations': sorted(dests[:15])})
     except Exception as e:
         return jsonify({'error': 'Could not load destinations.'}), 400
-        
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
