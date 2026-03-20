@@ -184,7 +184,6 @@ def normalise_phone(phone):
         phone = '+44' + phone[1:]
     elif phone.startswith('447') and len(phone) == 12:
         phone = '+' + phone
-    logger.info('normalise_phone result: %r', phone)
     return phone
 
 def register_user(phone_number):
@@ -286,7 +285,6 @@ def api_find_stops():
 def api_register():
     data = request.get_json()
     phone = data.get('phone', '').strip()
-    logger.info('api_register received phone: %r', phone)
     stops = data.get('stops', [])
     if not phone:
         return jsonify({'error': 'Please enter a phone number'}), 400
