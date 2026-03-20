@@ -3,3 +3,4 @@ twilio
 requests
 gunicorn
 psycopg2-binary
+stripe
