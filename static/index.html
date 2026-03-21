@@ -423,6 +423,7 @@
             const [loading, setLoading] = useState(false);
             const [mapCenter, setMapCenter] = useState(null);
             const [showingMore, setShowingMore] = useState(false);
+            const [placeSearch, setPlaceSearch] = useState('');
             const [step, setStep] = useState(1);
             const mapRef = useRef(null);
             const googleMapRef = useRef(null);
@@ -461,6 +462,59 @@
                 });
             }
 
+             async function searchByPlace() {
+                if (!placeSearch.trim()) return;
+                setLoading(true); setError('');
+                try {
+                    // Use Google Places to find the location
+                    const service = new window.google.maps.places.PlacesService(
+                        document.createElement('div')
+                    );
+                    service.findPlaceFromQuery({
+                        query: placeSearch,
+                        fields: ['geometry', 'formatted_address', 'name']
+                    }, async (results, status) => {
+                        if (status === window.google.maps.places.PlacesServiceStatus.OK && results[0]) {
+                            const loc = results[0].geometry.location;
+                            const lat = loc.lat();
+                            const lng = loc.lng();
+                            // Reverse geocode to get postcode
+                            const geocoder = new window.google.maps.Geocoder();
+                            geocoder.geocode({ location: { lat, lng } }, async (geoResults, geoStatus) => {
+                                if (geoStatus === 'OK' && geoResults[0]) {
+                                    // Extract postcode from address components
+                                    const pcComponent = geoResults[0].address_components.find(c =>
+                                        c.types.includes('postal_code')
+                                    );
+                                    if (pcComponent) {
+                                        setPostcode(pcComponent.long_name);
+                                        // Auto-search for stops at this postcode
+                                        const res = await fetch('/api/find-stops', {
+                                            method: 'POST', headers: {'Content-Type':'application/json'},
+                                            body: JSON.stringify({ postcode: pcComponent.long_name, radius: 400 })
+                                        });
+                                        const data = await res.json();
+                                        if (data.error) { setError(data.error); }
+                                        else { setNearbyStops(data.stops); setMapCenter(data.center); setStep(2); }
+                                    } else {
+                                        setError('Could not find a postcode for that location. Try entering the postcode directly.');
+                                    }
+                                } else {
+                                    setError('Could not find that location. Try entering the postcode directly.');
+                                }
+                                setLoading(false);
+                            });
+                        } else {
+                            setError('Place not found. Try a more specific name or enter a postcode.');
+                            setLoading(false);
+                        }
+                    });
+                } catch(e) {
+                    setError('Could not search for that place. Try entering the postcode directly.');
+                    setLoading(false);
+                }
+            }
+            
             async function findStops(radius = 400) {
                 setError(''); setLoading(true);
                 try {
@@ -580,6 +634,13 @@
                                 {stopType === 'bus' && (
                                     <>
                                         <input type="text" placeholder="Enter postcode e.g. SW12 9RQ" value={postcode} onChange={e => setPostcode(e.target.value.toUpperCase())} />
+                                        <p style={{textAlign:'center', color:'#888', fontSize:'0.85em', margin:'-8px 0 8px'}}>— or search by place name —</p>
+                                        <div className="keyword-row">
+                                            <input type="text" placeholder="e.g. Whitgift School Croydon" value={placeSearch} onChange={e => setPlaceSearch(e.target.value)} style={{marginBottom:0, textTransform:'none'}} />
+                                            <button onClick={searchByPlace} style={{width:'auto', padding:'14px 20px'}} disabled={loading || !placeSearch}>
+                                                {loading ? '...' : 'Search'}
+                                            </button>
+                                        </div>
                                         {error && <div className="error">{error}</div>}
                                         <button onClick={() => findStops(400)} disabled={loading || !postcode}>
                                             {loading ? 'Finding stops...' : 'Find Nearby Bus Stops →'}
