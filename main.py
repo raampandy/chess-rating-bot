@@ -413,7 +413,8 @@ def get_train_times(stop_config):
     if not crs:
         return 'Sorry, train stop not configured correctly.'
     try:
-        r = requests.get('https://huxley2.azurewebsites.net/departures/' + crs + '/15', timeout=10)
+        darwin_key = os.environ.get('DARWIN_API_KEY', '')
+        r = requests.get('https://huxley2.azurewebsites.net/departures/' + crs + '/15' + ('?accessToken=' + darwin_key if darwin_key else ''), timeout=10)
         data = r.json()
         services = data.get('trainServices', []) or []
         station_name = data.get('locationName', crs)
@@ -1059,7 +1060,9 @@ def api_find_stations():
     if not query:
         return jsonify({'error': 'Please enter a station name'}), 400
     try:
-        r = requests.get('https://huxley2.azurewebsites.net/crs/' + query, timeout=10)
+        darwin_key = os.environ.get('DARWIN_API_KEY', '')
+        token_param = '?accessToken=' + darwin_key if darwin_key else ''
+        r = requests.get('https://huxley2.azurewebsites.net/crs/' + query + token_param, timeout=10)
         stations = r.json()
         results = [{'name': s['stationName'], 'crs': s['crsCode']} for s in stations[:8]]
         return jsonify({'stations': results})
@@ -1074,8 +1077,10 @@ def api_train_destinations():
         return jsonify({'error': 'Please provide a station code'}), 400
     try:
         # Try next 120 minutes to get a good spread of destinations
+        darwin_key = os.environ.get('DARWIN_API_KEY', '')
+        token_param = '&accessToken=' + darwin_key if darwin_key else ''
         r = requests.get(
-            'https://huxley2.azurewebsites.net/departures/' + crs + '/50?timeWindow=120',
+            'https://huxley2.azurewebsites.net/departures/' + crs + '/50?timeWindow=120' + token_param,
             timeout=10
         )
         data = r.json()
@@ -1090,7 +1095,7 @@ def api_train_destinations():
         # If still empty, try a wider window
         if not dests:
             r2 = requests.get(
-                'https://huxley2.azurewebsites.net/departures/' + crs + '/50?timeOffset=-60&timeWindow=180',
+                'https://huxley2.azurewebsites.net/departures/' + crs + '/50?timeOffset=-60&timeWindow=180' + token_param,
                 timeout=10
             )
             data2 = r2.json()
