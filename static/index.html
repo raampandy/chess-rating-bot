@@ -676,7 +676,7 @@
                                                 {loading ? '...' : 'Search'}
                                             </button>
                                         </div>
-                                        {error && <div className="error">{error}</div>}
+                                        {error && error !== 'Please enter a postcode' && <div className="error">{error}</div>}
                                         <button onClick={() => findStops(400)} disabled={loading || !postcode}>
                                             {loading ? 'Finding stops...' : 'Find Nearby Bus Stops →'}
                                         </button>
