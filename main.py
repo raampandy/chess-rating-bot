@@ -1138,6 +1138,11 @@ def admin():
 </body>
 </html>'''
 
+@app.route('/test-trip')
+def test_trip():
+    result = get_journey_plan('CR52EG', 'SM13TL')
+    return result
+    
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port) 
