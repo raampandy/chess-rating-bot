@@ -548,26 +548,26 @@ def get_journey_plan(origin_postcode, dest_postcode):
             route = leg.get('routeOptions', [{}])[0].get('name', '') if leg.get('routeOptions') else ''
             if mode == 'walking':
                 if duration_leg > 1:
-                    lines.append(str(step_num) + '. 🚶 Walk ' + str(duration_leg) + ' mins')
+                    lines.append(str(step_num) + '. Walk ' + str(duration_leg) + 'm')
                     step_num += 1
             elif mode in ('bus', 'night-bus'):
-                lines.append(str(step_num) + '. 🚌 Bus ' + route
+                lines.append(str(step_num) + '. Bus ' + route
                              + (' @' + dep_time_str if dep_time_str else '')
-                             + ' · ' + stop_name)
+                             + ' ' + stop_name[:15])
                 step_num += 1
             elif mode in ('tube', 'elizabeth-line'):
-                lines.append(str(step_num) + '. 🚇 ' + route
+                lines.append(str(step_num) + '. Tube ' + route
                              + (' @' + dep_time_str if dep_time_str else '')
-                             + ' · ' + stop_name)
+                             + ' ' + stop_name[:15])
                 step_num += 1
             elif mode in ('overground', 'national-rail'):
-                lines.append(str(step_num) + '. 🚂 Train'
+                lines.append(str(step_num) + '. Train'
                              + (' @' + dep_time_str if dep_time_str else '')
-                             + ' · ' + stop_name)
+                             + ' ' + stop_name[:15])
                 step_num += 1
-        lines.append('⏱️ Total: ~' + str(duration) + ' mins')
+        lines.append('Total: ~' + str(duration) + 'mins')
         if depart_time:
-            lines.append('🕐 Departs: ' + depart_time)
+            lines.append('Departs: ' + depart_time)
         return '\n'.join(lines)
     except Exception as e:
         logger.error('Journey plan error: ' + str(e))
