@@ -408,6 +408,7 @@
         }
 
         function AddStopPage({ token, plan, stopCount, stopLimit, onStopAdded, onBack }) {
+            const placeInputRef = useRef(null);
             const [stopType, setStopType] = useState('bus');
             const [postcode, setPostcode] = useState('');
             const [nearbyStops, setNearbyStops] = useState([]);
@@ -434,6 +435,31 @@
                     initMap();
                 }
             }, [step, mapCenter, nearbyStops, stopType]);
+
+            useEffect(() => {
+                if (placeInputRef.current && window.google) {
+                    const autocomplete = new window.google.maps.places.Autocomplete(
+                        placeInputRef.current,
+                        { componentRestrictions: { country: 'gb' }, fields: ['geometry', 'name', 'formatted_address'] }
+                    );
+                    autocomplete.addListener('place_changed', async () => {
+                        const place = autocomplete.getPlace();
+                        if (!place.geometry) return;
+                        setPlaceSearch(place.name || place.formatted_address || '');
+                        const lat = place.geometry.location.lat();
+                        const lng = place.geometry.location.lng();
+                        setLoading(true); setError('');
+                        const res = await fetch('/api/find-stops', {
+                            method: 'POST', headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({ lat, lon: lng, radius: 400 })
+                        });
+                        const data = await res.json();
+                        if (data.error) { setError(data.error); }
+                        else { setNearbyStops(data.stops); setMapCenter(data.center); setStep(2); }
+                        setLoading(false);
+                    });
+                }
+            }, [placeInputRef.current]);
 
             function initMap() {
                 if (!mapRef.current) return;
@@ -636,7 +662,15 @@
                                         <input type="text" placeholder="Enter postcode e.g. SW12 9RQ" value={postcode} onChange={e => setPostcode(e.target.value.toUpperCase())} />
                                         <p style={{textAlign:'center', color:'#888', fontSize:'0.85em', margin:'-8px 0 8px'}}>— or search by place name —</p>
                                         <div className="keyword-row">
-                                            <input type="text" placeholder="e.g. Whitgift School Croydon" value={placeSearch} onChange={e => setPlaceSearch(e.target.value)} style={{marginBottom:0, textTransform:'none'}} />
+                                            <input
+                                                id="place-autocomplete"
+                                                type="text"
+                                                placeholder="e.g. Whitgift School Croydon"
+                                                value={placeSearch}
+                                                onChange={e => setPlaceSearch(e.target.value)}
+                                                style={{marginBottom:0, textTransform:'none'}}
+                                                ref={placeInputRef}
+                                            />
                                             <button onClick={searchByPlace} style={{width:'auto', padding:'14px 20px'}} disabled={loading || !placeSearch}>
                                                 {loading ? '...' : 'Search'}
                                             </button>
