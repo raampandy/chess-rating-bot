@@ -22,6 +22,7 @@ stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
 STRIPE_BASIC_PRICE_ID = os.environ.get('STRIPE_BASIC_PRICE_ID')
 STRIPE_FAMILY_PRICE_ID = os.environ.get('STRIPE_FAMILY_PRICE_ID')
+STRIPE_PREMIUM_PRICE_ID = os.environ.get('STRIPE_PREMIUM_PRICE_ID')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
 APP_URL = os.environ.get('APP_URL', 'https://web-production-e62738.up.railway.app')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'changeme')
@@ -29,12 +30,15 @@ ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'changeme')
 PLAN_LIMITS = {
     'free': 2,
     'basic': 5,
-    'family': 10
+    'family': 10,
+    'premium': 10
 }
+
+TRIP_ENABLED_PLANS = {'premium'}
 
 RESERVED_KEYWORDS = {
     'HELP', 'CHESS', 'STOP', 'EXIT', 'QUIT',
-    'CANCEL', 'INFO', 'STATUS', 'BUS', 'TRAIN'
+    'CANCEL', 'INFO', 'STATUS', 'BUS', 'TRAIN', 'TRIP'
 }
 
 def get_db():
@@ -492,6 +496,71 @@ def find_nearby_stops(lat, lon, radius=400):
         logger.error('TfL error: ' + str(e))
         return []
 
+def get_journey_plan(origin_postcode, dest_postcode):
+    try:
+        origin_lat, origin_lon = postcode_to_latlong(origin_postcode)
+        dest_lat, dest_lon = postcode_to_latlong(dest_postcode)
+        if not origin_lat:
+            return 'Sorry, could not find postcode: ' + origin_postcode.upper()
+        if not dest_lat:
+            return 'Sorry, could not find postcode: ' + dest_postcode.upper()
+        url = (
+            'https://api.tfl.gov.uk/Journey/JourneyResults/'
+            + str(origin_lat) + ',' + str(origin_lon)
+            + '/to/'
+            + str(dest_lat) + ',' + str(dest_lon)
+            + '?mode=bus,tube,overground,national-rail,walking'
+            + '&timeIs=Departing'
+        )
+        r = requests.get(url, timeout=15)
+        data = r.json()
+        journeys = data.get('journeys', [])
+        if not journeys:
+            return ('No route found between ' + origin_postcode.upper()
+                    + ' and ' + dest_postcode.upper()
+                    + '. Note: only London journeys supported.')
+        journey = journeys[0]
+        duration = journey.get('duration', 0)
+        legs = journey.get('legs', [])
+        lines = ['🗺️ ' + origin_postcode.upper() + ' → ' + dest_postcode.upper()]
+        step_num = 1
+        depart_time = None
+        for leg in legs:
+            mode = leg.get('mode', {}).get('id', '')
+            duration_leg = leg.get('duration', 0)
+            scheduled = leg.get('departureTime', '')
+            dep_time_str = scheduled[11:16] if scheduled else ''
+            if step_num == 1 and dep_time_str:
+                depart_time = dep_time_str
+            stop_name = leg.get('departurePoint', {}).get('commonName', '')[:18]
+            route = leg.get('routeOptions', [{}])[0].get('name', '') if leg.get('routeOptions') else ''
+            if mode == 'walking':
+                if duration_leg > 1:
+                    lines.append(str(step_num) + '. 🚶 Walk ' + str(duration_leg) + ' mins')
+                    step_num += 1
+            elif mode in ('bus', 'night-bus'):
+                lines.append(str(step_num) + '. 🚌 Bus ' + route
+                             + (' @' + dep_time_str if dep_time_str else '')
+                             + ' · ' + stop_name)
+                step_num += 1
+            elif mode in ('tube', 'elizabeth-line'):
+                lines.append(str(step_num) + '. 🚇 ' + route
+                             + (' @' + dep_time_str if dep_time_str else '')
+                             + ' · ' + stop_name)
+                step_num += 1
+            elif mode in ('overground', 'national-rail'):
+                lines.append(str(step_num) + '. 🚂 Train'
+                             + (' @' + dep_time_str if dep_time_str else '')
+                             + ' · ' + stop_name)
+                step_num += 1
+        lines.append('⏱️ Total: ~' + str(duration) + ' mins')
+        if depart_time:
+            lines.append('🕐 Departs: ' + depart_time)
+        return '\n'.join(lines)
+    except Exception as e:
+        logger.error('Journey plan error: ' + str(e))
+        return 'Sorry, could not get journey plan. Please try again shortly.'
+
 # ── ROUTES ───────────────────────────────────────────────
 
 @app.route('/')
@@ -562,28 +631,22 @@ def api_check_verification():
             to=phone, code=code
         )
         if result.status == 'approved':
-                register_user(phone)
-                conn = get_db()
-                cur = conn.cursor()
-                cur.execute('UPDATE users SET verified = TRUE WHERE phone_number = %s', (phone,))
-                conn.commit()
-                cur.close()
-                conn.close()
-                token = create_session(phone)
-                user = get_user(phone)
-                is_new = count_user_stops(phone) == 0
-                if is_new:
-                    send_sms(phone,
-                        'Welcome to TextMyRide! 🚌\n'
-                        'Your account is set up.\n'
-                        'Visit textmyride.co.uk to add your bus stops.\n'
-                        'Text HELP anytime to see your stops.')
-                return jsonify({
-                    'success': True,
-                    'token': token,
-                    'is_new_user': is_new,
-                    'plan': user.get('plan', 'free') if user else 'free'
-                })
+            register_user(phone)
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute('UPDATE users SET verified = TRUE WHERE phone_number = %s', (phone,))
+            conn.commit()
+            cur.close()
+            conn.close()
+            token = create_session(phone)
+            user = get_user(phone)
+            is_new = count_user_stops(phone) == 0
+            return jsonify({
+                'success': True,
+                'token': token,
+                'is_new_user': is_new,
+                'plan': user.get('plan', 'free') if user else 'free'
+            })
         else:
             return jsonify({'error': 'Incorrect code. Please try again.'}), 400
     except Exception as e:
@@ -798,9 +861,13 @@ def api_create_checkout():
     if not user:
         return jsonify({'error': 'Session expired'}), 401
     phone = user['phone_number']
-    price_id = STRIPE_BASIC_PRICE_ID if plan == 'basic' else STRIPE_FAMILY_PRICE_ID
+    price_id = {
+        'basic': STRIPE_BASIC_PRICE_ID,
+        'family': STRIPE_FAMILY_PRICE_ID,
+        'premium': STRIPE_PREMIUM_PRICE_ID
+    }.get(plan)
     if not price_id:
-        return jsonify({'error': 'Stripe not configured'}), 500
+        return jsonify({'error': 'Invalid plan or Stripe not configured'}), 500
     try:
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
@@ -927,12 +994,28 @@ def sms_reply():
         register_user(phone_number)
     if body_upper in ('HELP', ''):
         keywords = get_user_keywords(phone_number)
+        plan = get_user_plan(phone_number)
         if keywords:
             stops_list = ', '.join(keywords)
-            plan = get_user_plan(phone_number)
             message_text = 'TextMyRide - Your stops: ' + stops_list + '\nPlan: ' + plan.capitalize() + '\nText any stop name for live times.\nText CHESS LASTNAME FIRSTNAME for chess rating.'
+            if plan in TRIP_ENABLED_PLANS:
+                message_text += '\nText TRIP SW12 TO SW1A 1AA for journey plans.'
         else:
             message_text = 'Welcome to TextMyRide!\nVisit textmyride.co.uk to set up your stops.\nText CHESS LASTNAME FIRSTNAME for chess rating.'
+    elif body_upper.startswith('TRIP '):
+        plan = get_user_plan(phone_number)
+        if plan not in TRIP_ENABLED_PLANS:
+            message_text = ('TRIP journey planning is a Premium feature.\n'
+                           'Upgrade to Premium at textmyride.co.uk to use it.')
+        else:
+            trip_body = body[5:].strip().upper()
+            if ' TO ' not in trip_body:
+                message_text = 'Format: TRIP SW12 TO SW1A 1AA'
+            else:
+                parts = trip_body.split(' TO ', 1)
+                origin = parts[0].strip()
+                destination = parts[1].strip()
+                message_text = get_journey_plan(origin, destination)
     elif body_upper.startswith('CHESS '):
         player_name = body[6:].strip()
         message_text = get_chess_rating(player_name)
@@ -1002,7 +1085,7 @@ def admin():
 
     rows = ''
     for u in users:
-        plan_badge = {'free': '#888', 'basic': '#1a73e8', 'family': '#34a853'}.get(u['plan'], '#888')
+        plan_badge = {'free': '#888', 'basic': '#1a73e8', 'family': '#34a853', 'premium': '#9c27b0'}.get(u['plan'], '#888')
         family_note = f' (family of {u["family_owner"]})' if u['family_owner'] else ''
         rows += f'''<tr>
             <td style="font-family:monospace">{u["phone_number"]}</td>
