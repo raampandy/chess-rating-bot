@@ -701,8 +701,8 @@
                                             <div style={{marginTop:'15px'}}>
                                                 <p style={{fontWeight:'600', marginBottom:'10px'}}>Which destinations? (tick all that apply)</p>
                                                 {destinations.map((dest, i) => (
-                                                    <div key={i} className={'dest-item' + (selectedDests.includes(dest) ? ' checked' : '')} onClick={() => toggleDest(dest)}>
-                                                        <input type="checkbox" checked={selectedDests.includes(dest)} onChange={() => {}} />
+                                                     <div key={i} className={'dest-item' + (selectedDests.includes(dest) ? ' checked' : '')} onClick={() => toggleDest(dest)} style={{flexDirection:'row', justifyContent:'flex-start'}}>
+                                                        <input type="checkbox" checked={selectedDests.includes(dest)} onChange={() => {}} style={{width:'auto', marginRight:'10px'}} />
                                                         <span>🚂 {dest}</span>
                                                     </div>
                                                 ))}
