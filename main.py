@@ -1073,7 +1073,11 @@ def api_train_destinations():
     if not crs:
         return jsonify({'error': 'Please provide a station code'}), 400
     try:
-        r = requests.get('https://huxley2.azurewebsites.net/departures/' + crs + '/25', timeout=10)
+        # Try next 120 minutes to get a good spread of destinations
+        r = requests.get(
+            'https://huxley2.azurewebsites.net/departures/' + crs + '/50?timeWindow=120',
+            timeout=10
+        )
         data = r.json()
         services = data.get('trainServices', []) or []
         dests = []
@@ -1083,7 +1087,21 @@ def api_train_destinations():
                 name = d.get('locationName', '')
                 if name and name not in dests:
                     dests.append(name)
-        return jsonify({'destinations': sorted(dests[:15])})
+        # If still empty, try a wider window
+        if not dests:
+            r2 = requests.get(
+                'https://huxley2.azurewebsites.net/departures/' + crs + '/50?timeOffset=-60&timeWindow=180',
+                timeout=10
+            )
+            data2 = r2.json()
+            services2 = data2.get('trainServices', []) or []
+            for s in services2:
+                dest_list = s.get('destination', [])
+                for d in dest_list:
+                    name = d.get('locationName', '')
+                    if name and name not in dests:
+                        dests.append(name)
+        return jsonify({'destinations': sorted(dests[:20])})
     except Exception as e:
         return jsonify({'error': 'Could not load destinations.'}), 400
 
