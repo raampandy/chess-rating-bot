@@ -534,7 +534,7 @@ def get_journey_plan(origin_postcode, dest_postcode):
         journey = journeys[0]
         duration = journey.get('duration', 0)
         legs = journey.get('legs', [])
-        lines = ['🗺️ ' + origin_postcode.upper() + ' → ' + dest_postcode.upper()]
+        lines = [origin_postcode.upper() + '→' + dest_postcode.upper()]
         step_num = 1
         depart_time = None
         for leg in legs:
