@@ -145,8 +145,9 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const RESERVED = ['HELP','CHESS','STOP','EXIT','QUIT','CANCEL','INFO','STATUS','BUS','TRAIN'];
-        const PLAN_LIMITS = { free: 2, basic: 5, family: 10 };
+        const RESERVED = ['HELP','CHESS','STOP','EXIT','QUIT','CANCEL','INFO','STATUS','BUS','TRAIN','TRIP'];
+        const PLAN_LIMITS = { free: 2, basic: 5, family: 10, premium: 10 };
+        const TRIP_PLANS = ['premium'];
 
         function getToken() { try { return localStorage.getItem('tmr_session'); } catch(e) { return null; } }
         function setToken(t) { try { localStorage.setItem('tmr_session', t); } catch(e) {} }
@@ -574,7 +575,7 @@
                                 <h2>🚌 What would you like to add?</h2>
                                 <div className="type-toggle">
                                     <button className={'type-btn' + (stopType === 'bus' ? ' active' : '')} onClick={() => { setStopType('bus'); setSelectedStation(null); setStationResults([]); setDestinations([]); setSelectedDests([]); }}>🚌 Bus Stop</button>
-                                    <button className='type-btn' disabled={true} title="Coming soon!" style={{opacity:0.45, cursor:'not-allowed'}}>🚂 Train Station (coming soon)</button>
+                                    <button className={'type-btn' + (stopType === 'train' ? ' active' : '')} onClick={() => { setStopType('train'); setSelectedStop(null); setSelectedBuses([]); }}>🚂 Train Station</button>
                                 </div>
                                 {stopType === 'bus' && (
                                     <>
@@ -743,6 +744,24 @@
                                 {loading ? 'Setting up...' : 'Choose Family →'}
                             </button>
                         </div>
+
+                        <div className="plan-card" style={{borderColor:'#9c27b0', background:'#fdf3ff'}}>
+                            <div className="plan-header">
+                                <div className="plan-name">Premium 🌟</div>
+                                <div className="plan-price" style={{color:'#9c27b0'}}>£9.99/month</div>
+                            </div>
+                            <div className="plan-features">
+                                ✓ Up to 5 phone numbers<br/>
+                                ✓ Up to 10 stops per number<br/>
+                                ✓ <strong>TRIP journey planner</strong><br/>
+                                ✓ Text TRIP SW12 TO SW1A for routes<br/>
+                                ✓ Priority support
+                            </div>
+                            <button onClick={() => choosePlan('premium')} disabled={loading}
+                                style={{background:'#9c27b0'}}>
+                                {loading ? 'Setting up...' : 'Choose Premium →'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             );
@@ -840,9 +859,10 @@
                 />;
             }
 
-            const planColors = { free: '#888', basic: '#1a73e8', family: '#34a853' };
-            const canUpgrade = userData.plan !== 'family';
+            const planColors = { free: '#888', basic: '#1a73e8', family: '#34a853', premium: '#9c27b0' };
+            const canUpgrade = userData.plan !== 'premium';
             const atLimit = userData.stop_count >= userData.stop_limit;
+            const hasTRIP = TRIP_PLANS.includes(userData.plan);
 
             return (
                 <div>
@@ -866,10 +886,26 @@
                                 <span className="stop-limit-count">{userData.stop_count} / {userData.stop_limit}</span>
                             </div>
                             {canUpgrade && (
-                                <button onClick={() => upgradePlan(userData.plan === 'free' ? 'basic' : 'family')}
-                                    style={{background:'white', color:'#1a73e8', border:'2px solid #1a73e8', fontSize:'0.9em'}}>
-                                    ⬆️ Upgrade to {userData.plan === 'free' ? 'Basic (5 stops)' : 'Family (10 stops + 5 numbers)'}
-                                </button>
+                                <div style={{display:'flex', flexDirection:'column', gap:'8px'}}>
+                                    {userData.plan === 'free' && (
+                                        <button onClick={() => upgradePlan('basic')}
+                                            style={{background:'white', color:'#1a73e8', border:'2px solid #1a73e8', fontSize:'0.9em'}}>
+                                            ⬆️ Upgrade to Basic — 5 stops (£2.99/mo)
+                                        </button>
+                                    )}
+                                    {(userData.plan === 'free' || userData.plan === 'basic') && (
+                                        <button onClick={() => upgradePlan('family')}
+                                            style={{background:'white', color:'#34a853', border:'2px solid #34a853', fontSize:'0.9em'}}>
+                                            ⬆️ Upgrade to Family — 5 numbers + 10 stops (£4.99/mo)
+                                        </button>
+                                    )}
+                                    {userData.plan !== 'premium' && (
+                                        <button onClick={() => upgradePlan('premium')}
+                                            style={{background:'white', color:'#9c27b0', border:'2px solid #9c27b0', fontSize:'0.9em'}}>
+                                            🌟 Upgrade to Premium — TRIP journey planner (£9.99/mo)
+                                        </button>
+                                    )}
+                                </div>
                             )}
                         </div>
 
@@ -892,7 +928,7 @@
                             {atLimit ? (
                                 <div className="warning-box" style={{marginTop:'10px'}}>
                                     ⚠️ Stop limit reached ({userData.stop_limit} stops on {userData.plan} plan).
-                                    <button onClick={() => upgradePlan(userData.plan === 'free' ? 'basic' : 'family')}
+                                    <button onClick={() => upgradePlan(userData.plan === 'free' ? 'basic' : userData.plan === 'basic' ? 'family' : 'premium')}
                                         style={{marginTop:'8px', fontSize:'0.9em'}}>
                                         Upgrade to add more stops →
                                     </button>
@@ -903,6 +939,32 @@
                                 </button>
                             )}
                         </div>
+
+                        {/* TRIP journey planner */}
+                        {hasTRIP ? (
+                            <div className="card">
+                                <h2>🗺️ TRIP Journey Planner</h2>
+                                <div className="verified-box" style={{marginBottom:'12px'}}>
+                                    ✅ Active on your Premium plan
+                                </div>
+                                <div className="phone-preview">
+                                    <div style={{fontWeight:'600', marginBottom:'8px'}}>📱 Tell your child:</div>
+                                    <div>Text <strong>TRIP SW12 TO SW1A 1AA</strong> for a live journey plan</div>
+                                    <div style={{marginTop:'4px', color:'#666', fontSize:'0.9em'}}>Replace postcodes with any two London postcodes</div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="card" style={{borderLeft:'4px solid #9c27b0'}}>
+                                <h2 style={{color:'#9c27b0'}}>🗺️ TRIP Journey Planner</h2>
+                                <p style={{color:'#666', marginBottom:'15px', fontSize:'0.9em'}}>
+                                    Let your child text <strong>TRIP SW12 TO SW1A 1AA</strong> to get a live step-by-step journey plan — bus, tube, train and walking directions by SMS.
+                                </p>
+                                <button onClick={() => upgradePlan('premium')}
+                                    style={{background:'#9c27b0', fontSize:'0.9em'}}>
+                                    🌟 Upgrade to Premium to unlock TRIP (£9.99/mo)
+                                </button>
+                            </div>
+                        )}
 
                         {/* Family members */}
                         {userData.is_family_owner && (
