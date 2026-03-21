@@ -1027,7 +1027,13 @@ def sms_reply():
                 parts = trip_body.split(' TO ', 1)
                 origin = parts[0].strip()
                 destination = parts[1].strip()
-                message_text = get_journey_plan(origin, destination)
+                # Respond immediately to Twilio, send result via separate SMS
+                import threading
+                def send_trip_result():
+                    result = get_journey_plan(origin, destination)
+                    send_sms(phone_number, result)
+                threading.Thread(target=send_trip_result).start()
+                message_text = '🗺️ Getting your journey plan... you\'ll receive it in a few seconds!'
     elif body_upper.startswith('CHESS '):
         player_name = body[6:].strip()
         message_text = get_chess_rating(player_name)
