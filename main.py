@@ -514,6 +514,7 @@ def get_journey_plan(origin_postcode, dest_postcode):
             return 'Sorry, could not find postcode: ' + origin_postcode.upper()
         if not dest_lat:
             return 'Sorry, could not find postcode: ' + dest_postcode.upper()
+        tfl_key = os.environ.get('TFL_API_KEY', '')
         url = (
             'https://api.tfl.gov.uk/Journey/JourneyResults/'
             + str(origin_lat) + ',' + str(origin_lon)
@@ -521,8 +522,9 @@ def get_journey_plan(origin_postcode, dest_postcode):
             + str(dest_lat) + ',' + str(dest_lon)
             + '?mode=bus,tube,overground,national-rail,walking'
             + '&timeIs=Departing'
+            + ('&app_key=' + tfl_key if tfl_key else '')
         )
-        r = requests.get(url, timeout=15)
+        r = requests.get(url, timeout=25)
         data = r.json()
         journeys = data.get('journeys', [])
         if not journeys:
