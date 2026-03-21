@@ -450,6 +450,16 @@ def postcode_to_latlong(postcode):
         data = r.json()
         if data.get('status') == 200:
             return data['result']['latitude'], data['result']['longitude']
+        # Try autocomplete for partial postcodes e.g. SW12
+        r2 = requests.get('https://api.postcodes.io/postcodes/' + postcode_clean + '/autocomplete', timeout=10)
+        data2 = r2.json()
+        results = data2.get('result', [])
+        if results:
+            # Use the first autocomplete result
+            r3 = requests.get('https://api.postcodes.io/postcodes/' + results[0], timeout=10)
+            data3 = r3.json()
+            if data3.get('status') == 200:
+                return data3['result']['latitude'], data3['result']['longitude']
         return None, None
     except:
         return None, None
