@@ -477,10 +477,12 @@
                         if (!place.name) return;
                         // Clean up station name for search
                         // e.g. "Balham Underground Station" → "Balham"
-                        let name = place.name
+                        // Take just the first part before any comma
+                        let name = place.name.split(',')[0]
                             .replace(' Railway Station', '')
                             .replace(' Train Station', '')
                             .replace(' Underground Station', '')
+                            .replace(' Overground Station', '')
                             .replace(' Station', '')
                             .trim();
                         setStationSearch(name);
