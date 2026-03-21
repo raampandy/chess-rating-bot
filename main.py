@@ -1029,10 +1029,13 @@ def sms_reply():
                 destination = parts[1].strip()
                 # Respond immediately to Twilio, send result via separate SMS
                 import threading
+                import time
                 def send_trip_result():
+                    time.sleep(1)
                     result = get_journey_plan(origin, destination)
                     send_sms(phone_number, result)
-                threading.Thread(target=send_trip_result).start()
+                t = threading.Thread(target=send_trip_result, daemon=False)
+                t.start()
                 message_text = '🗺️ Getting your journey plan... you\'ll receive it in a few seconds!'
     elif body_upper.startswith('CHESS '):
         player_name = body[6:].strip()
