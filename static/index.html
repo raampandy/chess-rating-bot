@@ -679,14 +679,14 @@
             );
         }
 
-        function PlanPage({ token, onComplete }) {
+        function PlanPage({ token, onComplete, savedStops }) {
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState('');
-
+            const [done, setDone] = useState(false);
             async function choosePlan(plan) {
                 setLoading(true); setError('');
                 if (plan === 'free') {
-                    onComplete('free');
+                    setDone(true);
                     setLoading(false);
                     return;
                 }
@@ -703,6 +703,66 @@
                     }
                 } catch(e) { setError('Something went wrong. Please try again.'); }
                 setLoading(false);
+            }
+
+            if (done) {
+                return (
+                    <div style={{maxWidth:'600px', margin:'30px auto', padding:'0 20px'}}>
+                        <div className="card">
+                            <div className="success">
+                                <h3>🎉 All set up!</h3>
+                                <p>Your child's stops have been saved successfully.</p>
+                            </div>
+
+                            <div style={{background:'#1a73e8', borderRadius:'12px', padding:'20px', margin:'20px 0', color:'white', textAlign:'center'}}>
+                                <div style={{fontSize:'0.9em', opacity:'0.85', marginBottom:'6px'}}>📱 Your child needs to save this number:</div>
+                                <div style={{fontSize:'1.8em', fontWeight:'800', letterSpacing:'2px'}}>+44 7462 149542</div>
+                                <div style={{fontSize:'0.85em', opacity:'0.8', marginTop:'6px'}}>Save it as "TextMyRide" in their phone</div>
+                            </div>
+
+                            <div style={{marginBottom:'20px'}}>
+                                <div style={{fontWeight:'700', fontSize:'1em', marginBottom:'12px'}}>📋 What to do next:</div>
+                                <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                                    <div style={{display:'flex', gap:'12px', alignItems:'flex-start'}}>
+                                        <div style={{background:'#1a73e8', color:'white', borderRadius:'50%', width:'26px', height:'26px', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:'700', fontSize:'0.85em', flexShrink:0}}>1</div>
+                                        <div style={{fontSize:'0.9em', color:'#444'}}>Save <strong>+44 7462 149542</strong> as "TextMyRide" in your child's phone</div>
+                                    </div>
+                                    <div style={{display:'flex', gap:'12px', alignItems:'flex-start'}}>
+                                        <div style={{background:'#1a73e8', color:'white', borderRadius:'50%', width:'26px', height:'26px', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:'700', fontSize:'0.85em', flexShrink:0}}>2</div>
+                                        <div style={{fontSize:'0.9em', color:'#444'}}>They text a keyword to get live times — see their stops below</div>
+                                    </div>
+                                    <div style={{display:'flex', gap:'12px', alignItems:'flex-start'}}>
+                                        <div style={{background:'#1a73e8', color:'white', borderRadius:'50%', width:'26px', height:'26px', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:'700', fontSize:'0.85em', flexShrink:0}}>3</div>
+                                        <div style={{fontSize:'0.9em', color:'#444'}}>They text <strong>HELP</strong> anytime to see all their stop names</div>
+                                    </div>
+                                    <div style={{display:'flex', gap:'12px', alignItems:'flex-start'}}>
+                                        <div style={{background:'#34a853', color:'white', borderRadius:'50%', width:'26px', height:'26px', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:'700', fontSize:'0.85em', flexShrink:0}}>+</div>
+                                        <div style={{fontSize:'0.9em', color:'#444'}}>To add more stops later, click <strong>Sign In</strong> from the top menu</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{background:'#e5e5ea', borderRadius:'12px', padding:'15px', marginBottom:'20px'}}>
+                                <div style={{fontWeight:'700', marginBottom:'10px', fontSize:'0.95em'}}>💬 What the replies look like:</div>
+                                <div style={{background:'white', borderRadius:'10px', padding:'12px'}}>
+                                    <div style={{background:'#e5e5ea', borderRadius:'12px 12px 12px 4px', padding:'8px 12px', fontSize:'0.85em', marginBottom:'8px', display:'inline-block', maxWidth:'85%'}}>
+                                        🚌 Bus 271: 2 mins<br/>Bus 271: 14 mins<br/>Bus 271: 28 mins
+                                    </div>
+                                    <div style={{textAlign:'right'}}>
+                                        <div style={{background:'#1a73e8', color:'white', borderRadius:'12px 12px 4px 12px', padding:'8px 12px', fontSize:'0.85em', display:'inline-block'}}>HELP</div>
+                                    </div>
+                                    <div style={{background:'#e5e5ea', borderRadius:'12px 12px 12px 4px', padding:'8px 12px', fontSize:'0.85em', marginTop:'8px', display:'inline-block', maxWidth:'85%'}}>
+                                        Your stops: HOME, SCHOOL<br/>Text any stop for live times!
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button className="btn-green" onClick={() => onComplete('free')}>
+                                Go to My Dashboard →
+                            </button>
+                        </div>
+                    </div>
+                );
             }
 
             return (
@@ -993,10 +1053,15 @@
                             </div>
                         )}
 
-                        {/* Quick reference */}
+                       {/* Quick reference */}
                         {userData.stops.length > 0 && (
                             <div className="card">
                                 <h2>📱 Tell your child</h2>
+                                <div style={{background:'#1a73e8', borderRadius:'10px', padding:'14px', marginBottom:'14px', color:'white', textAlign:'center'}}>
+                                    <div style={{fontSize:'0.85em', opacity:'0.85', marginBottom:'4px'}}>Text this number:</div>
+                                    <div style={{fontSize:'1.4em', fontWeight:'800', letterSpacing:'1px'}}>+44 7462 149542</div>
+                                    <div style={{fontSize:'0.8em', opacity:'0.8', marginTop:'4px'}}>Save as "TextMyRide"</div>
+                                </div>
                                 <div className="phone-preview">
                                     {userData.stops.map(s => (
                                         <div key={s.keyword}>Text <strong>{s.keyword}</strong> for {s.type === 'train' ? 'trains from' : 'buses at'} {s.name}</div>
