@@ -1,0 +1,2 @@
+[deploy]
+startCommand = "gunicorn main:app --timeout 30 --workers 2"
