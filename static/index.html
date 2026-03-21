@@ -409,6 +409,7 @@
 
         function AddStopPage({ token, plan, stopCount, stopLimit, onStopAdded, onBack }) {
             const placeInputRef = useRef(null);
+            const stationInputRef = useRef(null);
             const [stopType, setStopType] = useState('bus');
             const [postcode, setPostcode] = useState('');
             const [nearbyStops, setNearbyStops] = useState([]);
@@ -461,7 +462,43 @@
                     });
                 }
             }, [placeInputRef.current]);
-
+            useEffect(() => {
+                if (stationInputRef.current && window.google && stopType === 'train') {
+                    const autocomplete = new window.google.maps.places.Autocomplete(
+                        stationInputRef.current,
+                        {
+                            componentRestrictions: { country: 'gb' },
+                            types: ['transit_station'],
+                            fields: ['name']
+                        }
+                    );
+                    autocomplete.addListener('place_changed', async () => {
+                        const place = autocomplete.getPlace();
+                        if (!place.name) return;
+                        // Clean up station name for search
+                        // e.g. "Balham Underground Station" → "Balham"
+                        let name = place.name
+                            .replace(' Railway Station', '')
+                            .replace(' Train Station', '')
+                            .replace(' Underground Station', '')
+                            .replace(' Station', '')
+                            .trim();
+                        setStationSearch(name);
+                        setLoading(true); setError('');
+                        try {
+                            const res = await fetch('/api/find-stations', {
+                                method: 'POST', headers: {'Content-Type':'application/json'},
+                                body: JSON.stringify({ query: name })
+                            });
+                            const data = await res.json();
+                            if (data.error) { setError(data.error); }
+                            else { setStationResults(data.stations); }
+                        } catch(e) { setError('Could not search stations.'); }
+                        setLoading(false);
+                    });
+                }
+            }, [stationInputRef.current, stopType]);
+            
             function initMap() {
                 if (!mapRef.current) return;
                 googleMapRef.current = new window.google.maps.Map(mapRef.current, {
@@ -684,8 +721,15 @@
                                 )}
                                 {stopType === 'train' && (
                                     <>
-                                        <div className="keyword-row">
-                                            <input type="text" placeholder="e.g. Balham" value={stationSearch} onChange={e => setStationSearch(e.target.value)} style={{marginBottom:0}} />
+                                       <div className="keyword-row">
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Balham"
+                                                value={stationSearch}
+                                                onChange={e => setStationSearch(e.target.value)}
+                                                style={{marginBottom:0}}
+                                                ref={stationInputRef}
+                                            />
                                             <button onClick={searchStations} style={{width:'auto', padding:'14px 20px'}} disabled={loading || !stationSearch}>
                                                 {loading ? '...' : 'Search'}
                                             </button>
