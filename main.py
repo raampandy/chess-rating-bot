@@ -506,6 +506,108 @@ def find_nearby_stops(lat, lon, radius=400):
         logger.error('TfL error: ' + str(e))
         return []
 
+def resolve_trip_location(phone_number, location_str):
+    """Resolve a location string to lat/lon.
+    Tries: 1) saved stop keyword, 2) postcode lookup"""
+    # Try as saved stop keyword first
+    user_stops = get_user_stops(phone_number, location_str)
+    if user_stops:
+        first = user_stops[0] if user_stops else {}
+        stop_type = first.get('type', 'bus')
+        if stop_type == 'bus':
+            stop_id = first.get('stop', '')
+            if stop_id:
+                try:
+                    url = 'https://api.tfl.gov.uk/StopPoint/' + stop_id
+                    r = requests.get(url, timeout=10)
+                    data = r.json()
+                    lat = data.get('lat') or data.get('latitude')
+                    lon = data.get('lon') or data.get('longitude')
+                    if lat and lon:
+                        return float(lat), float(lon)
+                except Exception as e:
+                    logger.error('Stop lookup error: ' + str(e))
+        elif stop_type == 'train':
+            crs = first.get('crs', '')
+            if crs:
+                try:
+                    r = requests.get('https://huxley2.azurewebsites.net/crs/' + crs, timeout=10)
+                    stations = r.json()
+                    if stations:
+                        # Search for matching station
+                        for s in stations:
+                            if s.get('crsCode', '').upper() == crs.upper():
+                                lat = s.get('latitude') or s.get('lat')
+                                lon = s.get('longitude') or s.get('lon')
+                                if lat and lon:
+                                    return float(lat), float(lon)
+                except Exception as e:
+                    logger.error('Station lookup error: ' + str(e))
+    # Try as postcode
+    lat, lon = postcode_to_latlong(location_str)
+    return lat, lon
+
+def get_journey_plan_coords(origin_lat, origin_lon, dest_lat, dest_lon, origin_name, dest_name):
+    """Get journey plan between two lat/lon coordinates."""
+    try:
+        tfl_key = os.environ.get('TFL_API_KEY', '')
+        url = (
+            'https://api.tfl.gov.uk/Journey/JourneyResults/'
+            + str(origin_lat) + ',' + str(origin_lon)
+            + '/to/'
+            + str(dest_lat) + ',' + str(dest_lon)
+            + '?mode=bus,tube,overground,national-rail,walking'
+            + '&timeIs=Departing'
+            + ('&app_key=' + tfl_key if tfl_key else '')
+        )
+        r = requests.get(url, timeout=25)
+        data = r.json()
+        journeys = data.get('journeys', [])
+        if not journeys:
+            return ('No route found between ' + origin_name + ' and ' + dest_name
+                    + '. Note: only London journeys supported.')
+        journey = journeys[0]
+        duration = journey.get('duration', 0)
+        legs = journey.get('legs', [])
+        lines = [origin_name + '->' + dest_name]
+        step_num = 1
+        depart_time = None
+        for leg in legs:
+            mode = leg.get('mode', {}).get('id', '')
+            duration_leg = leg.get('duration', 0)
+            scheduled = leg.get('departureTime', '')
+            dep_time_str = scheduled[11:16] if scheduled else ''
+            if step_num == 1 and dep_time_str:
+                depart_time = dep_time_str
+            stop_name = leg.get('departurePoint', {}).get('commonName', '')[:15]
+            route = leg.get('routeOptions', [{}])[0].get('name', '') if leg.get('routeOptions') else ''
+            if mode == 'walking':
+                if duration_leg > 1:
+                    lines.append(str(step_num) + '. Walk ' + str(duration_leg) + 'm')
+                    step_num += 1
+            elif mode in ('bus', 'night-bus'):
+                lines.append(str(step_num) + '. Bus ' + route
+                             + (' @' + dep_time_str if dep_time_str else '')
+                             + ' ' + stop_name)
+                step_num += 1
+            elif mode in ('tube', 'elizabeth-line'):
+                lines.append(str(step_num) + '. Tube ' + route
+                             + (' @' + dep_time_str if dep_time_str else '')
+                             + ' ' + stop_name)
+                step_num += 1
+            elif mode in ('overground', 'national-rail'):
+                lines.append(str(step_num) + '. Train'
+                             + (' @' + dep_time_str if dep_time_str else '')
+                             + ' ' + stop_name)
+                step_num += 1
+        lines.append('Total: ~' + str(duration) + 'mins')
+        if depart_time:
+            lines.append('Departs: ' + depart_time)
+        return '\n'.join(lines)
+    except Exception as e:
+        logger.error('Journey plan error: ' + str(e))
+        return 'Sorry, could not get journey plan. Please try again shortly.'
+        
 def get_journey_plan(origin_postcode, dest_postcode):
     try:
         origin_lat, origin_lon = postcode_to_latlong(origin_postcode)
@@ -1011,7 +1113,7 @@ def sms_reply():
             stops_list = ', '.join(keywords)
             message_text = 'TextMyRide - Your stops: ' + stops_list + '\nPlan: ' + plan.capitalize() + '\nText any stop name for live times.\nText CHESS LASTNAME FIRSTNAME for chess rating.'
             if plan in TRIP_ENABLED_PLANS:
-                message_text += '\nText TRIP SW12 TO SW1A 1AA for journey plans.'
+                message_text += '\nText TRIP HOME TO SCHOOL or TRIP SW12 TO SW1A1AA for journey plans.'
         else:
             message_text = 'Welcome to TextMyRide!\nVisit textmyride.co.uk to set up your stops.\nText CHESS LASTNAME FIRSTNAME for chess rating.'
     elif body_upper.startswith('TRIP '):
@@ -1022,13 +1124,20 @@ def sms_reply():
         else:
             trip_body = body[5:].strip().upper()
             if ' TO ' not in trip_body:
-                message_text = 'Format: TRIP SW12 TO SW1A 1AA'
+                message_text = 'Format: TRIP HOME TO SCHOOL or TRIP SW12 TO SW1A1AA'
             else:
                 parts = trip_body.split(' TO ', 1)
                 origin = parts[0].strip()
                 destination = parts[1].strip()
-                # Respond immediately to Twilio, send result via separate SMS
-                message_text = get_journey_plan(origin, destination)
+                # Resolve origin — saved stop keyword or postcode
+                origin_lat, origin_lon = resolve_trip_location(phone_number, origin)
+                dest_lat, dest_lon = resolve_trip_location(phone_number, destination)
+                if not origin_lat:
+                    message_text = 'Could not find location: ' + origin + '. Use a stop name (e.g. HOME) or postcode.'
+                elif not dest_lat:
+                    message_text = 'Could not find location: ' + destination + '. Use a stop name (e.g. SCHOOL) or postcode.'
+                else:
+                    message_text = get_journey_plan_coords(origin_lat, origin_lon, dest_lat, dest_lon, origin, destination)
     elif body_upper.startswith('CHESS '):
         player_name = body[6:].strip()
         message_text = get_chess_rating(player_name)
