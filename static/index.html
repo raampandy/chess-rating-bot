@@ -445,6 +445,7 @@
                     autocomplete.addListener('place_changed', async () => {
                         const place = autocomplete.getPlace();
                         if (!place.geometry) return;
+                        setError('');
                         setPlaceSearch(place.name || place.formatted_address || '');
                         const lat = place.geometry.location.lat();
                         const lng = place.geometry.location.lng();
