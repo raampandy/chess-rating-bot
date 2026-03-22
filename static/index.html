@@ -1272,7 +1272,7 @@
 
             function handleVerified(tok, isNewUser, plan) {
                 setTokenState(tok);
-                if (isNewUser) { setPage('setup'); }
+                if (isNewUser && plan === 'free') { setPage('setup'); }
                 else { setPage('dashboard'); }
             }
 
