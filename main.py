@@ -1270,6 +1270,70 @@ def admin():
   </table>
 </body>
 </html>'''
+
+@app.route('/privacy')
+def privacy():
+    return '''<!DOCTYPE html>
+<html><head><title>Privacy Policy - TextMyRide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{font-family:sans-serif;max-width:800px;margin:0 auto;padding:40px 20px;color:#333;line-height:1.7}
+h1{color:#1a73e8}h2{color:#333;margin-top:30px}a{color:#1a73e8}
+.back{display:inline-block;margin-bottom:30px;color:#1a73e8;text-decoration:none;font-weight:600}
+</style></head><body>
+<a href="/" class="back">← Back to TextMyRide</a>
+<h1>🚌 TextMyRide Privacy Policy</h1>
+<p><em>Effective date: 22 March 2026</em></p>
+<h2>1. Who We Are</h2>
+<p>TextMyRide is operated by Raam Pandy. We provide an SMS-based service that allows parents and guardians to set up live bus and train time alerts for children using basic mobile phones.</p>
+<p>Contact: <a href="mailto:hello@textmyride.co.uk">hello@textmyride.co.uk</a></p>
+<h2>2. What Data We Collect</h2>
+<p><strong>Account holders (parents/guardians):</strong> Mobile phone number, plan type, payment information (processed by Stripe), session tokens, stop configurations.</p>
+<p><strong>Children:</strong> Mobile phone number only (provided by parent during setup). We do not store SMS message content. We do not track real-time location. Postcodes are used only to find nearby stops and are not retained.</p>
+<h2>3. Lawful Basis</h2>
+<p>We process data under UK GDPR on the basis of contract, legitimate interests, and parental consent.</p>
+<h2>4. Children\'s Data</h2>
+<p>We only collect a child\'s phone number when provided by their parent or guardian. We do not profile children, use their data for marketing, or share it with third parties beyond what is described below.</p>
+<h2>5. Who We Share Data With</h2>
+<p>Twilio (SMS), Stripe (payments), Railway (hosting). We do not sell data.</p>
+<h2>6. Data Retention</h2>
+<p>Data is retained while your account is active. You can delete your account at any time. Inactive accounts are deleted after 12 months.</p>
+<h2>7. Your Rights</h2>
+<p>You have the right to access, correct, delete, restrict or port your data. Contact us at <a href="mailto:hello@textmyride.co.uk">hello@textmyride.co.uk</a>.</p>
+<h2>8. ICO</h2>
+<p>We are registered with the Information Commissioner\'s Office. You can complain to the ICO at <a href="https://ico.org.uk">ico.org.uk</a>.</p>
+<h2>9. Contact</h2>
+<p><a href="mailto:hello@textmyride.co.uk">hello@textmyride.co.uk</a></p>
+</body></html>'''
+
+@app.route('/terms')
+def terms():
+    return '''<!DOCTYPE html>
+<html><head><title>Terms of Service - TextMyRide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{font-family:sans-serif;max-width:800px;margin:0 auto;padding:40px 20px;color:#333;line-height:1.7}
+h1{color:#1a73e8}h2{color:#333;margin-top:30px}a{color:#1a73e8}
+.back{display:inline-block;margin-bottom:30px;color:#1a73e8;text-decoration:none;font-weight:600}
+</style></head><body>
+<a href="/" class="back">← Back to TextMyRide</a>
+<h1>🚌 TextMyRide Terms of Service</h1>
+<p><em>Effective date: 22 March 2026</em></p>
+<h2>1. About TextMyRide</h2>
+<p>TextMyRide is an SMS-based service enabling parents to set up live transport alerts for children. By registering you agree to these terms.</p>
+<h2>2. Eligibility</h2>
+<p>You must be 18+ and the parent or legal guardian of any child whose number you register.</p>
+<h2>3. Fair Use</h2>
+<p>Free: 30 SMS/month. Basic: 60 SMS/month. Family: 60 SMS/month per number. Premium: 100 SMS/month per number.</p>
+<h2>4. Plans and Payment</h2>
+<p>Paid plans billed monthly via Stripe. Cancel anytime. No refunds except as required by law. 30 days notice of price changes.</p>
+<h2>5. Your Responsibilities</h2>
+<p>You must provide accurate information, keep credentials secure, and not misuse the service.</p>
+<h2>6. Limitation of Liability</h2>
+<p>We are not liable for inaccurate transport data. Our liability is limited to amounts paid in the prior 3 months.</p>
+<h2>7. Governing Law</h2>
+<p>These terms are governed by the laws of England and Wales.</p>
+<h2>8. Contact</h2>
+<p><a href="mailto:hello@textmyride.co.uk">hello@textmyride.co.uk</a></p>
+</body></html>'''
     
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
