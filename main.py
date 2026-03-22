@@ -492,7 +492,14 @@ def find_nearby_stops(lat, lon, radius=400):
                 lines.extend(mode.get('lineIdentifier', []))
             indicator = s.get('indicator', '')
             towards = s.get('towards', '')
-            direction = towards if towards else indicator
+            # Prefer 'towards' as it's more descriptive
+            # Fall back to indicator but clean up compass directions
+            if towards:
+                direction = 'towards ' + towards
+            elif indicator in ('N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW'):
+                direction = indicator + '-bound'
+            else:
+                direction = indicator
             display_name = name + (' (' + direction + ')' if direction else '')
             if stop_id and lines:
                 results.append({
@@ -837,9 +844,103 @@ def api_add_stop():
         stop_config = [{'type': 'train', 'crs': stop['crs'], 'name': stop['name'], 'destinations': stop.get('destinations', [])}]
     else:
         stop_config = [{'type': 'bus', 'stop': stop['stop'], 'buses': stop['buses'], 'name': stop.get('name', '')}]
+     # Check for optional second stop
+    second_stop = data.get('second_stop')
+    if second_stop:
+        if second_stop.get('type') == 'train':
+            second_config = {'type': 'train', 'crs': second_stop['crs'],
+                           'name': second_stop['name'], 'destinations': second_stop.get('destinations', [])}
+        else:
+            second_config = {'type': 'bus', 'stop': second_stop['stop'],
+                           'buses': second_stop['buses'], 'name': second_stop.get('name', '')}
+        stop_config = stop_config + [second_config]
     save_user_stop(phone, keyword, stop_config)
     return jsonify({'success': True, 'stop_count': current_count + 1, 'stop_limit': limit})
 
+@app.route('/api/add-stop-to-keyword', methods=['POST'])
+def api_add_stop_to_keyword():
+    data = request.get_json()
+    token = data.get('token', '').strip()
+    keyword = data.get('keyword', '').strip().upper()
+    new_stop = data.get('stop', {})
+    if not token:
+        return jsonify({'error': 'Token required'}), 401
+    user = get_user_by_token(token)
+    if not user:
+        return jsonify({'error': 'Session expired'}), 401
+    phone = user['phone_number']
+    # Get existing stop configs
+    existing = get_user_stops(phone, keyword)
+    if not existing:
+        return jsonify({'error': 'Keyword not found'}), 404
+    if len(existing) >= 2:
+        return jsonify({'error': 'Maximum 2 stops per keyword reached'}), 400
+    # Build new stop config
+    if new_stop.get('type') == 'train':
+        stop_config = {'type': 'train', 'crs': new_stop['crs'],
+                      'name': new_stop['name'], 'destinations': new_stop.get('destinations', [])}
+    else:
+        stop_config = {'type': 'bus', 'stop': new_stop['stop'],
+                      'buses': new_stop['buses'], 'name': new_stop.get('name', '')}
+    updated_configs = existing + [stop_config]
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            'UPDATE stops SET stop_configs = %s WHERE phone_number = %s AND keyword = %s',
+            (json.dumps(updated_configs), phone, keyword)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error('DB error: ' + str(e))
+        return jsonify({'error': 'Could not update stop'}), 500
+
+@app.route('/api/remove-stop-from-keyword', methods=['POST'])
+def api_remove_stop_from_keyword():
+    data = request.get_json()
+    token = data.get('token', '').strip()
+    keyword = data.get('keyword', '').strip().upper()
+    stop_index = data.get('stop_index', 0)
+    if not token:
+        return jsonify({'error': 'Token required'}), 401
+    user = get_user_by_token(token)
+    if not user:
+        return jsonify({'error': 'Session expired'}), 401
+    phone = user['phone_number']
+    existing = get_user_stops(phone, keyword)
+    if not existing:
+        return jsonify({'error': 'Keyword not found'}), 404
+    if len(existing) <= 1:
+        # Only one stop left — delete the whole keyword
+        try:
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute('DELETE FROM stops WHERE phone_number = %s AND keyword = %s', (phone, keyword))
+            conn.commit()
+            cur.close()
+            conn.close()
+            return jsonify({'success': True, 'deleted_keyword': True})
+        except Exception as e:
+            return jsonify({'error': 'Could not delete stop'}), 500
+    # Remove stop at index
+    updated = [s for i, s in enumerate(existing) if i != stop_index]
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            'UPDATE stops SET stop_configs = %s WHERE phone_number = %s AND keyword = %s',
+            (json.dumps(updated), phone, keyword)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'success': True, 'deleted_keyword': False})
+    except Exception as e:
+        return jsonify({'error': 'Could not update stop'}), 500
+        
 @app.route('/api/delete-stop', methods=['POST'])
 def api_delete_stop():
     data = request.get_json()
