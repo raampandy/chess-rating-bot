@@ -316,6 +316,7 @@
             const [code, setCode] = useState('');
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState('');
+            const [consent, setConsent] = useState(false);
 
             async function sendCode() {
                 if (!phone.trim()) { setError('Please enter a phone number'); return; }
@@ -372,7 +373,21 @@
                             {!codeSent && (
                                 <>
                                     {error && <div className="error">{error}</div>}
-                                    <button onClick={sendCode} disabled={loading || !phone}>
+                                   <div style={{background:'#f0f4f8', borderRadius:'10px', padding:'14px', marginBottom:'12px'}}>
+                                        <label style={{display:'flex', gap:'12px', alignItems:'flex-start', cursor:'pointer'}}>
+                                            <input
+                                                type="checkbox"
+                                                checked={consent}
+                                                onChange={e => setConsent(e.target.checked)}
+                                                style={{width:'auto', margin:'2px 0 0 0', flexShrink:0}}
+                                            />
+                                            <span style={{fontSize:'0.85em', color:'#444', lineHeight:'1.5'}}>
+                                                I confirm I am the parent or guardian of the child whose phone number I am registering.
+                                                I have read and agree to the <a href="/privacy" target="_blank" style={{color:'#1a73e8'}}>Privacy Policy</a> and <a href="/terms" target="_blank" style={{color:'#1a73e8'}}>Terms of Service</a>.
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <button onClick={sendCode} disabled={loading || !phone || !consent}>
                                         {loading ? 'Sending...' : 'Send Verification Code →'}
                                     </button>
                                 </>
