@@ -1385,7 +1385,7 @@ h1{color:#1a73e8}h2{color:#333;margin-top:30px}a{color:#1a73e8}
 <h1>🚌 TextMyRide Privacy Policy</h1>
 <p><em>Effective date: 22 March 2026</em></p>
 <h2>1. Who We Are</h2>
-<p>TextMyRide is operated by Raam Pandy. We provide an SMS-based service that allows parents and guardians to set up live bus and train time alerts for children using basic mobile phones.</p>
+<p>TextMyRide ("we", "us", "our") provides an SMS-based service that allows parents and guardians to set up live bus and train time alerts for children using basic mobile phones.</p>
 <p>Contact: <a href="mailto:hello@textmyride.co.uk">hello@textmyride.co.uk</a></p>
 <h2>2. What Data We Collect</h2>
 <p><strong>Account holders (parents/guardians):</strong> Mobile phone number, plan type, payment information (processed by Stripe), session tokens, stop configurations.</p>
