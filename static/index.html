@@ -422,7 +422,7 @@
             );
         }
 
-        function AddStopPage({ token, plan, stopCount, stopLimit, onStopAdded, onBack }) {
+        function AddStopPage({ token, plan, stopCount, stopLimit, onStopAdded, onBack, existingKeyword }) {
             const placeInputRef = useRef(null);
             const stationInputRef = useRef(null);
             const [stopType, setStopType] = useState('bus');
@@ -442,6 +442,10 @@
             const [showingMore, setShowingMore] = useState(false);
             const [placeSearch, setPlaceSearch] = useState('');
             const [step, setStep] = useState(1);
+            const [addingSecond, setAddingSecond] = useState(false);
+            const [secondStop, setSecondStop] = useState(null);
+            const [secondBuses, setSecondBuses] = useState([]);
+            const [pendingKeyword, setPendingKeyword] = useState('');
             const mapRef = useRef(null);
             const googleMapRef = useRef(null);
             const markersRef = useRef([]);
@@ -665,15 +669,52 @@
                     stopData = { type: 'train', crs: selectedStation.crs, name: selectedStation.name, destinations: selectedDests };
                 }
 
-                setLoading(true);
+                // Store keyword and first stop, offer second stop
+                setPendingKeyword(kw);
+                setAddingSecond(true);
+                setSecondStop(null);
+                setSecondBuses([]);
+                // Reset selection for second stop
+                setSelectedStop(null);
+                setSelectedBuses([]);
+                setKeyword('');
+                // Store first stop in state
+                setSecondStop({ firstStop: stopData, keyword: kw });
+            }
+
+            async function finishSaving(includeSecond) {
+                setLoading(true); setError('');
+                if (existingKeyword) {
+                    // Adding second stop to existing keyword
+                    const s = nearbyStops[selectedStop];
+                    const stopData = { type: 'bus', stop: s.stop, buses: selectedBuses, name: s.name };
+                    try {
+                        const res = await fetch('/api/add-stop-to-keyword', {
+                            method: 'POST', headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({ token, keyword: existingKeyword, stop: stopData })
+                        });
+                        const data = await res.json();
+                        if (data.error) { setError(data.error); }
+                        else { onStopAdded(); }
+                    } catch(e) { setError('Could not save stop.'); }
+                    setLoading(false);
+                    return;
+                }
+                const firstStopData = secondStop.firstStop;
+                const kw = secondStop.keyword;
+                let body = { token, keyword: kw, stop: firstStopData };
+                if (includeSecond && selectedStop !== null && secondBuses.length > 0) {
+                    const s = nearbyStops[selectedStop];
+                    body.second_stop = { type: 'bus', stop: s.stop, buses: secondBuses, name: s.name };
+                }
                 try {
                     const res = await fetch('/api/add-stop', {
                         method: 'POST', headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({ token, keyword: kw, stop: stopData })
+                        body: JSON.stringify(body)
                     });
                     const data = await res.json();
                     if (data.error) { setError(data.error); }
-                    else { onStopAdded(); }
+                    else { setAddingSecond(false); onStopAdded(); }
                 } catch(e) { setError('Could not save stop. Please try again.'); }
                 setLoading(false);
             }
@@ -814,15 +855,58 @@
                                                 </div>
                                             ))}
                                         </div>
-                                        {selectedBuses.length > 0 && (
+                                         {selectedBuses.length > 0 && !addingSecond && (
                                             <div style={{marginTop:'15px'}}>
                                                 <p style={{fontWeight:'600', marginBottom:'8px'}}>Name this stop:</p>
                                                 <div className="keyword-row">
                                                     <input type="text" placeholder="e.g. HOME or SCHOOL" value={keyword} onChange={e => setKeyword(e.target.value.toUpperCase())} maxLength={10} style={{marginBottom:0}} />
                                                     <button onClick={saveStop} style={{width:'auto', padding:'14px 20px'}} disabled={loading}>
-                                                        {loading ? '...' : 'Save'}
+                                                        {loading ? '...' : 'Next'}
                                                     </button>
                                                 </div>
+                                                {error && <div className="error">{error}</div>}
+                                            </div>
+                                        )}
+
+                                        {addingSecond && (
+                                            <div style={{background:'#e8f0fe', borderRadius:'12px', padding:'16px', marginTop:'15px'}}>
+                                                <p style={{fontWeight:'700', marginBottom:'4px', color:'#1a73e8'}}>
+                                                    ✅ First stop saved for {secondStop && secondStop.keyword}
+                                                </p>
+                                                <p style={{fontSize:'0.9em', color:'#555', marginBottom:'12px'}}>
+                                                    Want to add a second nearby stop to the same keyword? (e.g. a stop on the other side of the road)
+                                                </p>
+                                                {selectedStop === null ? (
+                                                    <>
+                                                        <button onClick={() => finishSaving(false)} className="btn-outline" style={{marginBottom:'8px'}}>
+                                                            No thanks, just save with one stop
+                                                        </button>
+                                                        <p style={{fontSize:'0.85em', color:'#666', textAlign:'center'}}>— or select another stop above —</p>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <p style={{fontWeight:'600', marginBottom:'8px', fontSize:'0.9em'}}>
+                                                            Selected: {nearbyStops[selectedStop].name}
+                                                        </p>
+                                                        <div className="checkbox-grid">
+                                                            {nearbyStops[selectedStop].buses.map(bus => (
+                                                                <div key={bus} className={'checkbox-item' + (secondBuses.includes(bus) ? ' checked' : '')}
+                                                                    onClick={() => setSecondBuses(prev => prev.includes(bus) ? prev.filter(b => b !== bus) : [...prev, bus])}>
+                                                                    <input type="checkbox" checked={secondBuses.includes(bus)} onChange={() => {}} />
+                                                                    <span>{bus}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        {secondBuses.length > 0 && (
+                                                            <button onClick={() => finishSaving(true)} className="btn-green" style={{marginTop:'10px'}} disabled={loading}>
+                                                                {loading ? 'Saving...' : 'Save both stops as ' + (secondStop && secondStop.keyword) + ' →'}
+                                                            </button>
+                                                        )}
+                                                        <button onClick={() => finishSaving(false)} className="btn-outline" style={{marginTop:'8px'}} disabled={loading}>
+                                                            Save with first stop only
+                                                        </button>
+                                                    </>
+                                                )}
                                                 {error && <div className="error">{error}</div>}
                                             </div>
                                         )}
@@ -1011,6 +1095,17 @@
                 setLoading(false);
             }
 
+            async function removeStopFromKeyword(keyword, stopIndex) {
+                try {
+                    const res = await fetch('/api/remove-stop-from-keyword', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ token, keyword, stop_index: stopIndex })
+                    });
+                    const data = await res.json();
+                    if (data.success) { loadUser(); }
+                } catch(e) { setError('Could not remove stop.'); }
+            }
+            
             async function deleteStop(keyword) {
                 try {
                     const res = await fetch('/api/delete-stop', {
@@ -1062,14 +1157,20 @@
             if (loading) return <div style={{textAlign:'center', padding:'60px', color:'#666'}}>Loading your account...</div>;
             if (!userData) return null;
 
-            if (view === 'add') {
+             if (view === 'add' || view.startsWith('add-to-')) {
+                const existingKeyword = view.startsWith('add-to-') ? view.replace('add-to-', '') : null;
                 return <AddStopPage
                     token={token}
                     plan={userData.plan}
                     stopCount={userData.stop_count}
                     stopLimit={userData.stop_limit}
-                    onStopAdded={(action) => {
+                    existingKeyword={existingKeyword}
+                    onStopAdded={async (action) => {
                         if (action === 'upgrade') { upgradePlan(userData.plan === 'free' ? 'basic' : 'family'); }
+                        else if (existingKeyword) {
+                            // Adding second stop to existing keyword
+                            setView('dashboard'); loadUser();
+                        }
                         else { setView('dashboard'); loadUser(); }
                     }}
                     onBack={() => setView('dashboard')}
@@ -1133,12 +1234,34 @@
                                 <p style={{color:'#666', marginBottom:'15px'}}>No stops set up yet. Add your first stop below!</p>
                             ) : (
                                 userData.stops.map(s => (
-                                    <div key={s.keyword} className="saved-stop">
-                                        <div>
-                                            <div className="saved-stop-name">{s.keyword} {s.type === 'train' ? '🚂' : '🚌'}</div>
-                                            <div className="saved-stop-detail">{s.name}</div>
+                                    <div key={s.keyword} style={{marginBottom:'12px'}}>
+                                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'4px'}}>
+                                            <div className="saved-stop-name">{s.keyword} {s.type === 'train' ? '🚂' : '🚌'}
+                                                {s.configs && s.configs.length > 1 &&
+                                                    <span style={{fontSize:'0.75em', background:'#1a73e8', color:'white', borderRadius:'10px', padding:'2px 8px', marginLeft:'8px'}}>2 stops</span>
+                                                }
+                                            </div>
+                                            <button className="remove-btn" onClick={() => deleteStop(s.keyword)} title="Remove entire keyword">✕</button>
                                         </div>
-                                        <button className="remove-btn" onClick={() => deleteStop(s.keyword)}>✕</button>
+                                        {s.configs && s.configs.map((cfg, idx) => (
+                                            <div key={idx} style={{display:'flex', justifyContent:'space-between', alignItems:'center', background:'#e8f0fe', borderRadius:'8px', padding:'8px 12px', marginBottom:'4px'}}>
+                                                <div className="saved-stop-detail" style={{fontSize:'0.85em'}}>
+                                                    {cfg.type === 'train' ? '🚂' : '🚌'} {cfg.name}
+                                                    {cfg.buses && <span style={{color:'#1a73e8', marginLeft:'6px'}}>{cfg.buses.join(', ')}</span>}
+                                                </div>
+                                                {s.configs.length > 1 &&
+                                                    <button className="remove-btn" style={{fontSize:'0.9em'}}
+                                                        onClick={() => removeStopFromKeyword(s.keyword, idx)}
+                                                        title="Remove this stop">✕</button>
+                                                }
+                                            </div>
+                                        ))}
+                                        {s.configs && s.configs.length < 2 && (
+                                            <button onClick={() => setView('add-to-' + s.keyword)}
+                                                style={{background:'white', color:'#1a73e8', border:'1px dashed #1a73e8', borderRadius:'8px', padding:'6px 12px', fontSize:'0.8em', width:'auto', marginTop:'2px'}}>
+                                                + Add second stop to {s.keyword}
+                                            </button>
+                                        )}
                                     </div>
                                 ))
                             )}
